@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Offline-Bolusrechner</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root{
+      --bg:#f3f4f6; --card:#ffffff; --text:#111827; --muted:#6b7280;
+      --line:#d1d5db; --accent:#0f172a; --warn:#92400e; --warnbg:#fef3c7;
+      --danger:#991b1b; --dangerbg:#fee2e2; --ok:#166534; --okbg:#dcfce7;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--accent);color:white;padding:18px 16px;position:sticky;top:0;z-index:5}
+    header h1{font-size:1.2rem;margin:0}
+    header p{font-size:.85rem;margin:.3rem 0 0;color:#d1d5db}
+    main{max-width:780px;margin:auto;padding:14px}
+    .card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+    h2{font-size:1rem;margin:0 0 12px}
+    h3{font-size:.9rem;margin:14px 0 8px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media(max-width:620px){.grid{grid-template-columns:1fr}}
+    label{display:block;font-size:.84rem;font-weight:650;margin-bottom:5px}
+    input,select,button{width:100%;font:inherit}
+    input,select{border:1px solid var(--line);border-radius:10px;padding:11px;background:white}
+    small,.hint{color:var(--muted);font-size:.78rem}
+    button{border:0;border-radius:11px;padding:12px 14px;font-weight:700;cursor:pointer}
+    .primary{background:var(--accent);color:white}
+    .secondary{background:#e5e7eb;color:#111827}
+    .danger-btn{background:#fee2e2;color:#991b1b}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    .result{font-size:1.8rem;font-weight:800;margin:.2rem 0}
+    .subresult{font-size:1rem;font-weight:700;margin-top:5px}
+    .plan-box{border:1px solid #d1d5db;border-radius:12px;padding:12px;margin-top:10px}
+    .plan-box strong{font-size:1.05rem}
+    .breakdown{display:grid;gap:8px;margin-top:12px}
+    .line{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid #eee;padding-bottom:7px}
+    .line span:last-child{font-weight:700;text-align:right}
+    .notice{padding:11px;border-radius:10px;margin-top:10px}
+    .warn{background:var(--warnbg);color:var(--warn)}
+    .danger{background:var(--dangerbg);color:var(--danger)}
+    .ok{background:var(--okbg);color:var(--ok)}
+    details summary{cursor:pointer;font-weight:700}
+    .footer{font-size:.75rem;color:var(--muted);padding:4px 2px 20px}
+    .helper{border:1px solid #e5e7eb;border-radius:11px;padding:11px;margin-top:8px}
+    .helper strong{display:block}
+    .mini-btn{width:auto;padding:8px 10px}
+    [hidden]{display:none !important}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Offline-Bolusrechner – Testversion 0.4</h1>
+  <p>Netto-Rechnung mit Split, FPE und Aktivitätspuffer.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Aktuelle Situation</h2>
+    <div class="grid">
+      <div>
+        <label for="glucose">Glukose aktuell (mmol/l)</label>
+        <input id="glucose" type="number" min="0" step="0.1" value="6.0">
+      </div>
+      <div>
+        <label for="target">Zielwert (mmol/l)</label>
+        <select id="target">
+          <option value="6">6,0</option>
+          <option value="6.5">6,5</option>
+          <option value="7">7,0</option>
+        </select>
+      </div>
+      <div>
+        <label for="isf">Korrekturfaktor / ISF</label>
+        <input id="isf" type="number" min="0.1" step="0.1" value="2.0">
+        <small>Vorerst: 1 IE senkt ungefähr um diesen Wert.</small>
+      </div>
+      <div>
+        <label for="trend">Trend</label>
+        <select id="trend">
+          <option value="stable">stabil</option>
+          <option value="up">steigend</option>
+          <option value="upfast">stark steigend</option>
+          <option value="down">fallend</option>
+          <option value="downfast">stark fallend</option>
+        </select>
+      </div>
+      <div>
+        <label for="iob">Gesamt-IOB laut Anzeige (IE)</label>
+        <input id="iob" type="number" min="0" step="0.1" value="0">
+      </div>
+      <div>
+        <label for="iobEffective">IOB, das noch den Glukosewert senken wird (IE)</label>
+        <input id="iobEffective" type="number" min="0" step="0.1" value="0">
+        <small>Nur den Anteil eintragen, der nicht mehr durch noch wirkende Mahlzeiten-KH „gebunden“ ist.</small>
+      </div>
+    </div>
+    <div class="notice warn">
+      Reines Korrektur-IOB meist vollständig eintragen. IOB eines noch laufenden Mahlzeitenbolus meist nicht vollständig.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Mahlzeit</h2>
+    <div class="grid">
+      <div>
+        <label for="carbs">Kohlenhydrate (g)</label>
+        <input id="carbs" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="mealLevel">Manuelles Mahlzeitenlevel</label>
+        <select id="mealLevel">
+          <option value="L1">L1 – sehr schnell / fettarm</option>
+          <option value="L2" selected>L2 – normal gemischt</option>
+          <option value="L3">L3 – langsam / fett- oder proteinreich</option>
+          <option value="L4">L4 – stark verzögert / sehr reichhaltig</option>
+        </select>
+      </div>
+      <div>
+        <label for="levelMode">Level-Steuerung</label>
+        <select id="levelMode">
+          <option value="auto" selected>Automatisch aus Fett/Protein, falls vorhanden</option>
+          <option value="manual">Immer manuell</option>
+        </select>
+      </div>
+      <div>
+        <label for="fat">Fett (g, optional)</label>
+        <input id="fat" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="protein">Protein (g, optional)</label>
+        <input id="protein" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="directFpe">FPE direkt (optional)</label>
+        <input id="directFpe" type="number" min="0" step="0.1" placeholder="überschreibt Fett/Protein für FPE">
+      </div>
+      <div>
+        <label for="mealName">Mahlzeit / Notiz</label>
+        <input id="mealName" type="text" placeholder="z. B. Pasta mit Pesto">
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Aktivität und Anpassung</h2>
+    <div class="grid">
+      <div>
+        <label for="activity">Aktivitätslevel</label>
+        <select id="activity">
+          <option value="A0">A0 – ungewöhnlich inaktiv</option>
+          <option value="A1" selected>A1 – normaler Alltag mit langem Gassi</option>
+          <option value="A2">A2 – deutlich aktiver Tag</option>
+          <option value="A3">A3 – außergewöhnlich hohe Aktivität</option>
+        </select>
+      </div>
+      <div>
+        <label for="timing">Zeitpunkt der Aktivität</label>
+        <select id="timing">
+          <option value="past">bereits absolviert</option>
+          <option value="current">läuft gerade</option>
+          <option value="soon">beginnt demnächst</option>
+          <option value="later">erst später geplant</option>
+          <option value="none" selected>keine zusätzliche Angabe</option>
+        </select>
+      </div>
+      <div>
+        <label for="manualAdjust">Manuelle Feinanpassung (%)</label>
+        <input id="manualAdjust" type="number" min="-50" max="50" step="5" value="0">
+        <small>Minus = weniger Insulinbedarf, Plus = mehr Insulinbedarf.</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <button class="primary" id="calculate">Berechnen</button>
+      <button class="secondary" id="reset">Eingaben zurücksetzen</button>
+    </div>
+  </section>
+
+  <section class="card" id="resultCard" hidden>
+    <h2>Ergebnis</h2>
+    <div class="hint" id="resultLabel">Netto-Empfehlung</div>
+    <div class="result" id="mainResult">–</div>
+    <div class="subresult" id="secondaryResult"></div>
+
+    <div id="splitPlan" hidden>
+      <div class="plan-box">
+        <div class="hint">Geschätzter Gesamtbedarf ohne FPE-Zusatz</div>
+        <strong id="totalNeed">–</strong>
+      </div>
+      <div class="plan-box">
+        <div class="hint">Jetzt / zum Essensbeginn</div>
+        <strong id="initialDose">–</strong>
+        <div class="hint" id="initialReason"></div>
+      </div>
+      <div class="plan-box">
+        <div class="hint">Verzögerter KH-Anteil</div>
+        <strong id="delayedDose">–</strong>
+        <div class="hint" id="delayedTiming"></div>
+      </div>
+      <div class="plan-box">
+        <div class="hint">Möglicher zusätzlicher FPE-Anteil</div>
+        <strong id="lateFpeDose">–</strong>
+        <div class="hint" id="fpeTiming"></div>
+      </div>
+    </div>
+
+    <div id="warnings"></div>
+
+    <div id="helperSuggestions" hidden>
+      <h3>Passende KH-Helfer</h3>
+      <div id="helperList"></div>
+    </div>
+
+    <div class="breakdown">
+      <div class="line"><span>Verwendetes Mahlzeitenlevel</span><span id="usedLevel">–</span></div>
+      <div class="line"><span>Automatischer Level-Vorschlag</span><span id="suggestedLevel">–</span></div>
+      <div class="line"><span>KH-Bolus A0-Basis</span><span id="baseBolus">–</span></div>
+      <div class="line"><span>Aktivitätsanpassung</span><span id="activityAdj">–</span></div>
+      <div class="line"><span>Manuelle Anpassung</span><span id="manualAdj">–</span></div>
+      <div class="line"><span>Korrekturanteil</span><span id="correction">–</span></div>
+      <div class="line"><span>Noch senkendes IOB</span><span id="iobDeduction">–</span></div>
+      <div class="line"><span>Aktivitätspuffer</span><span id="activityBuffer">–</span></div>
+      <div class="line"><span>Wirksamer KH-Faktor</span><span id="effectiveRatio">–</span></div>
+      <div class="line"><span>FPE</span><span id="fpeValue">–</span></div>
+      <div class="line"><span>Mahlzeitenhinweis</span><span id="mealHint">–</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Meine KH-Helfer</summary>
+      <p class="hint">Die App schlägt nur einfache Portionen vor: ganze, halbe oder – wo eingestellt – Drittel.</p>
+      <div id="helperEditor"></div>
+
+      <h3>Neuen KH-Helfer anlegen</h3>
+      <div class="grid">
+        <div><label for="newName">Name</label><input id="newName" type="text" placeholder="z. B. Traubenzucker"></div>
+        <div><label for="newUnit">Portionseinheit</label><input id="newUnit" type="text" placeholder="z. B. Stück oder 150 ml"></div>
+        <div><label for="newCarbs">KH pro ganzer Portion (g)</label><input id="newCarbs" type="number" min="0.1" step="0.1"></div>
+        <div>
+          <label for="newStep">Erlaubte Teilung</label>
+          <select id="newStep">
+            <option value="1">nur ganze Portionen</option>
+            <option value="0.5" selected>halbe Portionen</option>
+            <option value="0.3333333333">Drittel</option>
+            <option value="0.25">Viertel</option>
+          </select>
+        </div>
+        <div>
+          <label for="newSpeed">Wirkung</label>
+          <select id="newSpeed">
+            <option value="fast">schnell</option>
+            <option value="medium">mittel</option>
+            <option value="sustained">nachhaltiger</option>
+          </select>
+        </div>
+      </div>
+      <button class="primary" id="addHelper" style="margin-top:12px">KH-Helfer hinzufügen</button>
+      <div class="row" style="margin-top:12px">
+        <button class="secondary" id="saveHelpers">KH-Helfer speichern</button>
+        <button class="danger-btn" id="restoreHelpers">Standardliste wiederherstellen</button>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Einstellungen</summary>
+      <div class="grid" style="margin-top:12px">
+        <div><label for="carbRatio">A0-Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
+        <div><label for="fpeRatio">FPE pro 1 IE</label><input id="fpeRatio" type="number" min="0.1" step="0.1" value="3"></div>
+        <div>
+          <label for="rounding">Insulin-Dosisschritt (IE)</label>
+          <select id="rounding">
+            <option value="0.5" selected>0,5 IE</option>
+            <option value="1">1,0 IE</option>
+            <option value="0.1">0,1 IE</option>
+          </select>
+        </div>
+        <div>
+          <label for="carbRounding">KH-Rundung (g)</label>
+          <select id="carbRounding">
+            <option value="1">1 g</option>
+            <option value="5" selected>5 g</option>
+            <option value="10">10 g</option>
+          </select>
+        </div>
+        <div><label for="hypoMinimum">Mindestmenge bei ≤3,9 oder fallend (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
+        <div><label for="a0">A0 Reduktion (%)</label><input id="a0" type="number" min="0" max="90" step="5" value="0"></div>
+        <div><label for="a1">A1 Reduktion (%)</label><input id="a1" type="number" min="0" max="90" step="5" value="20"></div>
+        <div><label for="a2">A2 Reduktion (%)</label><input id="a2" type="number" min="0" max="90" step="5" value="40"></div>
+        <div><label for="a3">A3 Reduktion (%)</label><input id="a3" type="number" min="0" max="90" step="5" value="55"></div>
+
+        <div><label for="bufferA0">Aktivitätspuffer A0 (g)</label><input id="bufferA0" type="number" min="0" step="5" value="0"></div>
+        <div><label for="bufferA1">Aktivitätspuffer A1 (g)</label><input id="bufferA1" type="number" min="0" step="5" value="10"></div>
+        <div><label for="bufferA2">Aktivitätspuffer A2 (g)</label><input id="bufferA2" type="number" min="0" step="5" value="20"></div>
+        <div><label for="bufferA3">Aktivitätspuffer A3 (g)</label><input id="bufferA3" type="number" min="0" step="5" value="30"></div>
+
+        <div><label for="splitL1">L1 initial (%)</label><input id="splitL1" type="number" min="0" max="100" step="5" value="100"></div>
+        <div><label for="splitL2">L2 initial (%)</label><input id="splitL2" type="number" min="0" max="100" step="5" value="80"></div>
+        <div><label for="splitL3">L3 initial (%)</label><input id="splitL3" type="number" min="0" max="100" step="5" value="65"></div>
+        <div><label for="splitL4">L4 initial (%)</label><input id="splitL4" type="number" min="0" max="100" step="5" value="50"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="saveSettings">Einstellungen speichern</button>
+        <button class="secondary" id="restoreSettings">Standardwerte</button>
+      </div>
+    </details>
+  </section>
+
+  <div class="footer">
+    Persönliche Test- und Dokumentationshilfe, keine automatische Therapieentscheidung. Spätdosen immer anhand von Verlauf, IOB, Trend und tatsächlicher Nahrungswirkung neu beurteilen.
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const defaults = {
+  carbRatio:10, fpeRatio:3, rounding:0.5, carbRounding:5, hypoMinimum:15,
+  a0:0, a1:20, a2:40, a3:55,
+  bufferA0:0, bufferA1:10, bufferA2:20, bufferA3:30,
+  splitL1:100, splitL2:80, splitL3:65, splitL4:50
+};
+const defaultHelpers = [
+  {name:'Fior di Grano Mürbekeks', unit:'1 Keks', carbs:6.2, step:0.5, speed:'medium'},
+  {name:'Bio-Aprikose, getrocknet', unit:'1 Stück', carbs:8.0, step:0.5, speed:'medium'},
+  {name:'Fruchtschnitte Waldfrucht', unit:'1 Riegel', carbs:20.4, step:1/3, speed:'fast'},
+  {name:'Orangen-Mango-Saft', unit:'150 ml Glas', carbs:13.9, step:0.5, speed:'fast'},
+  {name:'Maracuja-Saft', unit:'150 ml Glas', carbs:18.6, step:0.5, speed:'fast'},
+  {name:'Toastie mit Käse', unit:'1 Portion', carbs:31.0, step:0.5, speed:'sustained'},
+  {name:'Apfel, mittel (Schätzwert)', unit:'1 Apfel', carbs:15.0, step:0.5, speed:'medium'}
+];
+let helpers = [];
+
+function n(id){ return Number($(id).value || 0); }
+function fmt(v, digits=1){ return Number(v).toLocaleString('de-DE',{minimumFractionDigits:digits,maximumFractionDigits:digits}); }
+function roundStep(value, step){ return Math.round(value/step)*step; }
+function ceilStep(value, step){ return Math.ceil(value/step)*step; }
+function levelNumber(l){ return Number(l.slice(1)); }
+
+function loadSettings(){
+  const s = {...defaults, ...(JSON.parse(localStorage.getItem('bolusSettingsV04') || '{}'))};
+  Object.keys(defaults).forEach(k => $(k).value = s[k]);
+}
+function saveSettings(){
+  const s = {};
+  Object.keys(defaults).forEach(k => s[k] = n(k));
+  localStorage.setItem('bolusSettingsV04', JSON.stringify(s));
+  alert('Einstellungen lokal gespeichert.');
+}
+function restoreSettings(){
+  localStorage.removeItem('bolusSettingsV04');
+  loadSettings();
+}
+function loadHelpers(){
+  helpers = JSON.parse(localStorage.getItem('bolusHelpersV04') || 'null') || structuredClone(defaultHelpers);
+  renderHelperEditor();
+}
+function saveHelpers(){
+  syncHelpersFromEditor();
+  localStorage.setItem('bolusHelpersV04', JSON.stringify(helpers));
+  alert('KH-Helfer lokal gespeichert.');
+}
+function restoreHelpers(){
+  helpers = structuredClone(defaultHelpers);
+  localStorage.removeItem('bolusHelpersV04');
+  renderHelperEditor();
+}
+function speedLabel(s){ return s==='fast'?'schnell':s==='medium'?'mittel':'nachhaltiger'; }
+
+function renderHelperEditor(){
+  const box=$('helperEditor');
+  box.innerHTML='';
+  helpers.forEach((h,i)=>{
+    const div=document.createElement('div');
+    div.className='helper';
+    div.innerHTML=`
+      <div class="grid">
+        <div><label>Name</label><input data-i="${i}" data-k="name" value="${h.name.replaceAll('"','&quot;')}"></div>
+        <div><label>Portion</label><input data-i="${i}" data-k="unit" value="${h.unit.replaceAll('"','&quot;')}"></div>
+        <div><label>KH pro Portion (g)</label><input type="number" step="0.1" min="0.1" data-i="${i}" data-k="carbs" value="${h.carbs}"></div>
+        <div><label>Teilung</label>
+          <select data-i="${i}" data-k="step">
+            <option value="1" ${h.step===1?'selected':''}>ganz</option>
+            <option value="0.5" ${Math.abs(h.step-0.5)<0.001?'selected':''}>halb</option>
+            <option value="0.3333333333" ${Math.abs(h.step-1/3)<0.01?'selected':''}>Drittel</option>
+            <option value="0.25" ${Math.abs(h.step-0.25)<0.001?'selected':''}>Viertel</option>
+          </select>
+        </div>
+        <div><label>Wirkung</label>
+          <select data-i="${i}" data-k="speed">
+            <option value="fast" ${h.speed==='fast'?'selected':''}>schnell</option>
+            <option value="medium" ${h.speed==='medium'?'selected':''}>mittel</option>
+            <option value="sustained" ${h.speed==='sustained'?'selected':''}>nachhaltiger</option>
+          </select>
+        </div>
+      </div>
+      <button class="danger-btn mini-btn" data-delete="${i}" style="margin-top:8px">Löschen</button>`;
+    box.appendChild(div);
+  });
+  box.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{
+    helpers.splice(Number(btn.dataset.delete),1); renderHelperEditor();
+  }));
+}
+function syncHelpersFromEditor(){
+  document.querySelectorAll('#helperEditor [data-i]').forEach(el=>{
+    const i=Number(el.dataset.i), k=el.dataset.k;
+    helpers[i][k]=['carbs','step'].includes(k)?Number(el.value):el.value;
+  });
+}
+function addHelper(){
+  const name=$('newName').value.trim(), unit=$('newUnit').value.trim();
+  const carbs=n('newCarbs'), step=n('newStep'), speed=$('newSpeed').value;
+  if(!name||!unit||carbs<=0){ alert('Bitte Name, Portion und KH angeben.'); return; }
+  syncHelpersFromEditor();
+  helpers.push({name,unit,carbs,step,speed});
+  ['newName','newUnit','newCarbs'].forEach(id=>$(id).value='');
+  renderHelperEditor();
+}
+
+function automaticLevel(fat, protein, carbs){
+  let level='L1';
+  let reason='wenig Fett und keine starke Verzögerung aus den Makros erkennbar';
+
+  if(fat >= 40){
+    level='L4'; reason='sehr hoher Fettanteil';
+  } else if(fat >= 20){
+    level='L3'; reason='deutlich erhöhter Fettanteil';
+  } else if(fat >= 10){
+    level='L2'; reason='mäßig erhöhter Fettanteil';
+  }
+
+  if(fat >= 10 && protein >= 35 && levelNumber(level) < 3){
+    level='L3'; reason='Kombination aus Fett und viel Protein';
+  }
+  if(fat >= 25 && protein >= 40){
+    level='L4'; reason='viel Fett und viel Protein';
+  }
+  if(fat < 8 && protein >= 30){
+    level='L2'; reason='viel Protein bei wenig Fett: eher früher KH-Anstieg, aber mögliche spätere Proteinwirkung';
+  }
+  if(carbs >= 90 && fat >= 30){
+    level='L4'; reason='große kohlenhydratreiche Mahlzeit mit viel Fett';
+  }
+  return {level,reason};
+}
+function mealHint(level){
+  return {
+    L1:'frühe Wirkung; kaum KH-Anteil zurückhalten',
+    L2:'normal gemischter Verlauf; kleinen Spätanteil prüfen',
+    L3:'verzögerten Anstieg über mehrere Stunden erwarten',
+    L4:'stark verzögerten Verlauf und großen Split prüfen'
+  }[level];
+}
+function delayedWindow(level){
+  return {
+    L1:'kein regulärer verzögerter KH-Anteil',
+    L2:'nach etwa 1–2 Stunden anhand des Verlaufs prüfen',
+    L3:'nach etwa 2–4 Stunden anhand des Verlaufs prüfen',
+    L4:'nach etwa 3–5 Stunden anhand des Verlaufs prüfen'
+  }[level];
+}
+function fpeWindow(level){
+  return {
+    L1:'bei proteinreicher Mahlzeit frühestens nach etwa 2–4 Stunden neu beurteilen',
+    L2:'nach etwa 2–4 Stunden neu beurteilen',
+    L3:'nach etwa 3–5 Stunden neu beurteilen',
+    L4:'nach etwa 4–7 Stunden neu beurteilen'
+  }[level];
+}
+function warningsHtml(items){
+  return items.length ? items.map(([cls,text])=>`<div class="notice ${cls}">${text}</div>`).join('')
+    : '<div class="notice ok">Keine offensichtliche Plausibilitätswarnung aus den eingegebenen Daten.</div>';
+}
+function portionText(qty, unit){
+  const eps=0.02;
+  let q;
+  if(Math.abs(qty-1/3)<eps) q='⅓';
+  else if(Math.abs(qty-2/3)<eps) q='⅔';
+  else if(Math.abs(qty-0.5)<eps) q='½';
+  else if(Math.abs(qty-1.5)<eps) q='1½';
+  else if(Math.abs(qty-2.5)<eps) q='2½';
+  else q=Number(qty.toFixed(2)).toLocaleString('de-DE');
+  return `${q} × ${unit}`;
+}
+function helperSuggestions(target, preferFast){
+  syncHelpersFromEditor();
+  const candidates=[];
+  helpers.forEach(h=>{
+    for(let qty=h.step; qty<=4+1e-9; qty+=h.step){
+      const carbs=h.carbs*qty;
+      let score=Math.abs(carbs-target);
+      if(preferFast && h.speed!=='fast') score+=4;
+      if(!preferFast && h.speed==='sustained') score-=0.5;
+      candidates.push({...h,qty,total:carbs,score});
+    }
+  });
+  candidates.sort((a,b)=>a.score-b.score);
+  const chosen=[], used=new Set();
+  for(const c of candidates){
+    if(used.has(c.name)) continue;
+    chosen.push(c); used.add(c.name);
+    if(chosen.length===4) break;
+  }
+  return chosen;
+}
+function renderSuggestions(target, preferFast){
+  const list=helperSuggestions(target,preferFast);
+  $('helperList').innerHTML=list.map(c=>`
+    <div class="helper">
+      <strong>${c.name}</strong>
+      ${portionText(c.qty,c.unit)} ≈ ${fmt(c.total,1)} g KH
+      <div class="hint">${speedLabel(c.speed)} wirkend</div>
+    </div>`).join('');
+  $('helperSuggestions').hidden=list.length===0;
+}
+function getActivityBuffer(activity,timing,trend){
+  const base=n('buffer'+activity);
+  let multiplier=0;
+  if(timing==='current'||timing==='soon') multiplier=1;
+  else if(timing==='past') multiplier=0.5;
+  else multiplier=0;
+  let value=base*multiplier;
+  if(trend==='down') value+=5;
+  if(trend==='downfast') value+=10;
+  return value;
+}
+function getInitialShare(level,activity,timing){
+  let share=n('split'+level)/100;
+  if((timing==='current'||timing==='soon') && activity==='A1') share-=0.05;
+  if((timing==='current'||timing==='soon'||timing==='past') && activity==='A2') share-=0.05;
+  if((timing==='current'||timing==='soon'||timing==='past') && activity==='A3') share-=0.10;
+  return Math.max(0.25,Math.min(1,share));
+}
+function calculate(){
+  const glucose=n('glucose'), target=n('target'), isf=n('isf');
+  const iob=n('iob'), iobEffective=n('iobEffective');
+  const carbs=n('carbs'), fat=n('fat'), protein=n('protein');
+  const directFpe=$('directFpe').value===''?null:n('directFpe');
+  const manualLevel=$('mealLevel').value, levelMode=$('levelMode').value;
+  const activity=$('activity').value, reduction=n(activity.toLowerCase());
+  const timing=$('timing').value, trend=$('trend').value, manual=n('manualAdjust');
+  const carbRatio=n('carbRatio'), fpeRatio=n('fpeRatio'), rounding=n('rounding');
+  const carbRounding=n('carbRounding'), hypoMinimum=n('hypoMinimum');
+
+  if(isf<=0||carbRatio<=0||fpeRatio<=0){ alert('Bitte gültige Faktoren eingeben.'); return; }
+
+  const auto=automaticLevel(fat,protein,carbs);
+  const macrosEntered=(fat>0||protein>0);
+  const usedLevel=(levelMode==='auto'&&macrosEntered)?auto.level:manualLevel;
+
+  const warnings=[];
+  if(iobEffective>iob) warnings.push(['danger','Das noch senkende IOB ist höher als das Gesamt-IOB.']);
+  if(glucose<=3.9) warnings.push(['danger','Wert im Hypobereich: schnelle Kohlenhydrate zuführen und zeitnah erneut kontrollieren.']);
+  if(['down','downfast'].includes(trend)) warnings.push(['warn','Fallender Trend: Der Wert kann während der Kohlenhydratwirkung noch weiter sinken.']);
+  if(['A2','A3'].includes(activity)) warnings.push(['warn','Hohe Aktivität kann länger und stärker nachwirken als dieses vereinfachte Modell abbildet.']);
+  if(['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
+  if(levelMode==='auto'&&macrosEntered&&auto.level!==manualLevel)
+    warnings.push(['warn',`Makronährstoffe sprechen für ${auto.level}, manuell gewählt war ${manualLevel}. Für die Splitberechnung wird ${auto.level} verwendet.`]);
+  if(directFpe!==null&&!macrosEntered)
+    warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung unsicher.']);
+
+  const baseBolus=carbs/carbRatio;
+  const afterActivity=baseBolus*(1-reduction/100);
+  const afterManual=afterActivity*(1+manual/100);
+  const correction=(glucose-target)/isf;
+  const effectiveIob=Math.min(iobEffective,iob);
+  const combinedFactor=(1-reduction/100)*(1+manual/100);
+  const effectiveRatio=carbRatio/combinedFactor;
+  const activityBuffer=getActivityBuffer(activity,timing,trend);
+
+  const initialShare=getInitialShare(usedLevel,activity,timing);
+  const initialCarbDose=afterManual*initialShare;
+  const delayedCarbDose=Math.max(0,afterManual-initialCarbDose);
+  const immediateNet=initialCarbDose+correction-effectiveIob;
+
+  const fpe=directFpe!==null?directFpe:((9*fat+4*protein)/100);
+  const fpeDose=fpe/fpeRatio;
+  const totalNeed=Math.max(0,afterManual+correction-effectiveIob);
+
+  $('usedLevel').textContent=usedLevel;
+  $('suggestedLevel').textContent=macrosEntered?`${auto.level} – ${auto.reason}`:'nicht berechnet';
+  $('baseBolus').textContent=fmt(baseBolus)+' IE';
+  $('activityAdj').textContent='−'+fmt(baseBolus-afterActivity)+' IE ('+fmt(reduction,0)+' %)';
+  $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManual-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
+  $('correction').textContent=(correction>=0?'+':'')+fmt(correction)+' IE';
+  $('iobDeduction').textContent='−'+fmt(effectiveIob)+' IE';
+  $('activityBuffer').textContent=fmt(activityBuffer,0)+' g KH';
+  $('effectiveRatio').textContent=fmt(effectiveRatio)+' g KH je 1 IE';
+  $('fpeValue').textContent=fmt(fpe)+' FPE';
+  $('mealHint').textContent=mealHint(usedLevel);
+
+  const hypoOrFalling=glucose<=3.9||['down','downfast'].includes(trend);
+  $('splitPlan').hidden=true;
+  $('helperSuggestions').hidden=true;
+
+  if(immediateNet>0.24){
+    const initialRounded=roundStep(immediateNet,rounding);
+    const delayedRounded=roundStep(delayedCarbDose,rounding);
+    const totalRounded=roundStep(totalNeed,rounding);
+    const fpeRounded=roundStep(fpeDose,rounding);
+
+    $('resultLabel').textContent='Split-Empfehlung';
+    $('mainResult').textContent=fmt(initialRounded)+' IE jetzt spritzen';
+    $('secondaryResult').textContent=delayedRounded>0
+      ? `Nicht der gesamte errechnete Bedarf wird sofort gegeben.`
+      : 'Kein regulärer verzögerter KH-Anteil vorgesehen.';
+
+    $('totalNeed').textContent=fmt(totalRounded)+' IE insgesamt für KH, Korrektur und IOB-Bilanz';
+    $('initialDose').textContent=fmt(initialRounded)+' IE';
+    $('initialReason').textContent=`Initialanteil ${fmt(initialShare*100,0)} % des aktivitätsbereinigten KH-Bolus; Korrektur/IOB werden sofort verrechnet.`;
+    $('delayedDose').textContent=delayedRounded>0?`bis zu ${fmt(delayedRounded)} IE später prüfen`:'0,0 IE';
+    $('delayedTiming').textContent=delayedWindow(usedLevel);
+    $('lateFpeDose').textContent=fpeRounded>0?`bis zu ${fmt(fpeRounded)} IE zusätzlich prüfen`:'0,0 IE';
+    $('fpeTiming').textContent=fpeWindow(usedLevel);
+    $('splitPlan').hidden=false;
+  } else {
+    const deficitCarbs=Math.max(0,Math.abs(Math.min(0,immediateNet))*effectiveRatio);
+    let neededCarbs=deficitCarbs+activityBuffer;
+    if(hypoOrFalling) neededCarbs=Math.max(neededCarbs,hypoMinimum);
+    const roundedCarbs=neededCarbs>0?ceilStep(neededCarbs,carbRounding):0;
+
+    if(roundedCarbs>0){
+      $('resultLabel').textContent='Kohlenhydrat-Empfehlung';
+      $('mainResult').textContent=fmt(roundedCarbs,0)+' g KH essen';
+      $('secondaryResult').textContent='Kein zusätzlicher Sofortbolus.';
+      renderSuggestions(roundedCarbs,hypoOrFalling);
+    } else {
+      $('resultLabel').textContent='Netto-Empfehlung';
+      $('mainResult').textContent='Kein zusätzlicher Bolus';
+      $('secondaryResult').textContent='Aktuell ergibt sich weder eine Insulin- noch eine zusätzliche KH-Empfehlung.';
+    }
+  }
+
+  $('warnings').innerHTML=warningsHtml(warnings);
+  $('resultCard').hidden=false;
+  $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function resetInputs(){
+  ['carbs','fat','protein','iob','iobEffective','manualAdjust'].forEach(id=>$(id).value=0);
+  $('directFpe').value=''; $('mealName').value=''; $('glucose').value=6; $('target').value=6;
+  $('trend').value='stable'; $('activity').value='A1'; $('mealLevel').value='L2';
+  $('levelMode').value='auto'; $('timing').value='none'; $('resultCard').hidden=true;
+}
+
+$('calculate').addEventListener('click',calculate);
+$('reset').addEventListener('click',resetInputs);
+$('saveSettings').addEventListener('click',saveSettings);
+$('restoreSettings').addEventListener('click',restoreSettings);
+$('addHelper').addEventListener('click',addHelper);
+$('saveHelpers').addEventListener('click',saveHelpers);
+$('restoreHelpers').addEventListener('click',restoreHelpers);
+
+loadSettings();
+loadHelpers();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
