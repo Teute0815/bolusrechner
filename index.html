@@ -8,6 +8,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
   <style>
     :root{
       --bg:#f3f4f6; --card:#ffffff; --text:#111827; --muted:#6b7280;
@@ -24,7 +26,26 @@
     h2{font-size:1rem;margin:0 0 12px}
     h3{font-size:.9rem;margin:14px 0 8px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    @media(max-width:620px){.grid{grid-template-columns:1fr}}
+    .situation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .macro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .full-span{grid-column:1/-1}
+    .field-source{min-height:1.05em;display:block;margin-top:4px}
+    .level-state{display:block;margin-top:5px;color:var(--muted);font-size:.78rem}
+    .qr-panel{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;text-align:center}
+    .qr-panel img,.qr-panel canvas{max-width:100%;height:auto;image-rendering:pixelated}
+    .qr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .qr-actions button{width:auto;flex:1}
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-card{background:white;border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+    .modal-card h2{margin-bottom:8px}
+    @media(max-width:620px){
+      .grid{grid-template-columns:1fr}
+      .situation-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .macro-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+      .situation-grid input,.situation-grid select,.macro-grid input{padding:9px 7px}
+      .situation-grid label,.macro-grid label{font-size:.76rem}
+      .situation-grid small,.macro-grid small{font-size:.7rem}
+    }
     label{display:block;font-size:.84rem;font-weight:650;margin-bottom:5px}
     input,select,button{width:100%;font:inherit}
     input,select{border:1px solid var(--line);border-radius:10px;padding:11px;background:white}
@@ -73,13 +94,14 @@
       .line span:first-child{max-width:58%}
       .result{font-size:1.6rem}
       .row{flex-direction:column}
+      .qr-actions{flex-direction:column}
       .update-banner{top:68px}
     }
   </style>
 </head>
 <body>
 <header>
-  <h1>Offline-Bolusrechner – Testversion 0.5</h1>
+  <h1>Offline-Bolusrechner – Testversion 0.6</h1>
   <p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p>
 </header>
 
@@ -93,11 +115,11 @@
       </div>
       <button id="loadNightscout" class="secondary compact-btn">Daten neu laden</button>
     </div>
-    <div class="grid">
+    <div class="situation-grid">
       <div>
         <label for="glucose">Glukose aktuell (<span class="glucoseUnitLabel">mmol/l</span>)</label>
         <input id="glucose" type="number" min="0" step="0.1" value="6.0">
-        <small id="glucoseAge"></small>
+        <small id="glucoseAge" class="field-source"></small>
       </div>
       <div>
         <label for="target">Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
@@ -106,7 +128,7 @@
       <div>
         <label for="isf">Korrekturfaktor / ISF (<span class="isfUnitLabel">mmol/l je IE</span>)</label>
         <input id="isf" type="number" min="0.1" step="0.1" value="2.0">
-        <small>1 IE senkt ungefähr um diesen Wert.</small>
+        <small id="isfSource" class="field-source">Manuell eingegeben.</small>
       </div>
       <div>
         <label for="trend">Trend</label>
@@ -117,18 +139,19 @@
           <option value="down">fallend</option>
           <option value="downfast">stark fallend</option>
         </select>
+        <small id="trendSource" class="field-source"></small>
       </div>
       <div>
-        <label for="iob">Gesamt-IOB laut Anzeige (IE)</label>
-        <input id="iob" type="number" min="0" step="0.1" value="0">
-        <small id="iobSource"></small>
+        <label for="iob">Gesamt-IOB (IE)</label>
+        <input id="iob" type="number" min="0" step="0.01" value="0">
+        <small id="iobSource" class="field-source"></small>
       </div>
       <div>
-        <label for="cob">COB / noch wirksame Kohlenhydrate (g)</label>
+        <label for="cob">COB (g)</label>
         <input id="cob" type="number" min="0" step="1" value="0">
-        <small id="cobSource">Nur Information; wird nicht automatisch vom Bolus abgezogen.</small>
+        <small id="cobSource" class="field-source">Nur Information; wird nicht automatisch vom Bolus abgezogen.</small>
       </div>
-      <div>
+      <div class="full-span">
         <label for="iobEffective">IOB, das noch den Glukosewert senken wird (IE)</label>
         <input id="iobEffective" type="number" min="0" step="0.1" value="0">
         <small>Nur den Anteil eintragen, der nicht mehr durch noch wirkende Mahlzeiten-KH „gebunden“ ist.</small>
@@ -147,37 +170,35 @@
         <input id="carbs" type="number" min="0" step="1" value="0">
       </div>
       <div>
-        <label for="mealLevel">Manuelles Mahlzeitenlevel</label>
-        <select id="mealLevel">
-          <option value="L1">L1 – sehr schnell / fettarm</option>
-          <option value="L2" selected>L2 – normal gemischt</option>
-          <option value="L3">L3 – langsam / fett- oder proteinreich</option>
-          <option value="L4">L4 – stark verzögert / sehr reichhaltig</option>
-        </select>
-      </div>
-      <div>
-        <label for="levelMode">Level-Steuerung</label>
-        <select id="levelMode">
-          <option value="auto" selected>Automatisch aus Fett/Protein, falls vorhanden</option>
-          <option value="manual">Immer manuell</option>
-        </select>
-      </div>
-      <div>
-        <label for="fat">Fett (g, optional)</label>
-        <input id="fat" type="number" min="0" step="1" value="0">
-      </div>
-      <div>
-        <label for="protein">Protein (g, optional)</label>
-        <input id="protein" type="number" min="0" step="1" value="0">
-      </div>
-      <div>
-        <label for="directFpe">FPE direkt (optional)</label>
-        <input id="directFpe" type="number" min="0" step="0.1" placeholder="überschreibt Fett/Protein für FPE">
-      </div>
-      <div>
         <label for="mealName">Mahlzeit / Notiz</label>
         <input id="mealName" type="text" placeholder="z. B. Pasta mit Pesto">
       </div>
+    </div>
+
+    <div class="macro-grid" style="margin-top:12px">
+      <div>
+        <label for="fat">Fett (g)</label>
+        <input id="fat" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="protein">Protein (g)</label>
+        <input id="protein" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="directFpe">FPE</label>
+        <input id="directFpe" type="number" min="0" step="0.1" value="0">
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label for="mealLevel">Mahlzeitenlevel</label>
+      <select id="mealLevel">
+        <option value="L1">L1 – sehr schnell / fettarm</option>
+        <option value="L2" selected>L2 – normal gemischt</option>
+        <option value="L3">L3 – langsam / fett- oder proteinreich</option>
+        <option value="L4">L4 – stark verzögert / sehr reichhaltig</option>
+      </select>
+      <small id="mealLevelState" class="level-state">Automatisch aus Fett und Protein berechnet.</small>
     </div>
   </section>
 
@@ -256,7 +277,6 @@
 
     <div class="breakdown">
       <div class="line"><span>Verwendetes Mahlzeitenlevel</span><span id="usedLevel">–</span></div>
-      <div class="line"><span>Automatischer Level-Vorschlag</span><span id="suggestedLevel">–</span></div>
       <div class="line"><span>KH-Bolus A0-Basis</span><span id="baseBolus">–</span></div>
       <div class="line"><span>Aktivitätsanpassung</span><span id="activityAdj">–</span></div>
       <div class="line"><span>Manuelle Anpassung</span><span id="manualAdj">–</span></div>
@@ -341,6 +361,7 @@
         <button class="secondary" id="testNightscout">Nightscout-Verbindung testen</button>
       </div>
       <p class="hint">URL und Token werden nur lokal in diesem Browser gespeichert. Ein Read-only-Token verwenden, niemals das API_SECRET.</p>
+      <div id="nightscoutProfileInfo" class="notice ok" hidden></div>
 
       <h3>Berechnungsparameter</h3>
       <div class="grid">
@@ -390,10 +411,29 @@
         <button class="secondary" id="importData">Einstellungen importieren</button>
       </div>
       <input class="file-input" id="importFile" type="file" accept="application/json,.json">
-      <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert.</p>
-      <div class="version">Programmversion 0.5</div>
+      <div class="row" style="margin-top:10px">
+        <button class="secondary" id="exportQr">Als QR-Code anzeigen</button>
+        <button class="secondary" id="importQr">QR-Code einlesen</button>
+      </div>
+      <input class="file-input" id="qrImageFile" type="file" accept="image/*" capture="environment">
+      <div class="inline-check" style="margin-top:10px">
+        <input id="qrIncludeToken" type="checkbox">
+        <label for="qrIncludeToken" style="margin:0">Nightscout-Token ausdrücklich in den QR-Code aufnehmen</label>
+      </div>
+      <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert. Das Nightscout-Token wird nur nach ausdrücklicher Auswahl aufgenommen.</p>
+      <div class="version">Programmversion 0.6</div>
     </details>
   </section>
+
+  <div id="qrModal" class="modal" hidden>
+    <div class="modal-card">
+      <h2 id="qrModalTitle">Einstellungen übertragen</h2>
+      <div id="qrContent"></div>
+      <div class="qr-actions">
+        <button id="closeQrModal" class="secondary">Schließen</button>
+      </div>
+    </div>
+  </div>
 
   <div class="footer">
     Test- und Dokumentationshilfe, keine automatische Therapieentscheidung. Spätdosen immer anhand von Verlauf, IOB, Trend und tatsächlicher Nahrungswirkung neu beurteilen.
@@ -401,7 +441,7 @@
 </main>
 
 <script>
-const APP_VERSION = '0.5';
+const APP_VERSION = '0.6';
 const $ = id => document.getElementById(id);
 
 const defaults = {
@@ -431,6 +471,9 @@ let helpers = [];
 let currentUnit = 'mmol';
 let refreshing = false;
 let pendingWorker = null;
+let mealLevelManual = false;
+let fpeManual = false;
+let latestNightscoutMeta = {};
 
 function n(id){ return Number($(id).value || 0); }
 function fmt(v, digits=1){ return Number(v).toLocaleString('de-DE',{minimumFractionDigits:digits,maximumFractionDigits:digits}); }
@@ -469,9 +512,9 @@ function setUnit(newUnit, convertValues=true){
 }
 
 function getStoredSettings(){
-  let stored = JSON.parse(localStorage.getItem('bolusSettingsV05') || 'null');
+  let stored = JSON.parse(localStorage.getItem('bolusSettingsV06') || 'null');
   if(!stored){
-    const old = JSON.parse(localStorage.getItem('bolusSettingsV04') || 'null');
+    const old = JSON.parse(localStorage.getItem('bolusSettingsV05') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV04') || 'null');
     if(old) stored = {...old};
   }
   return {...defaults, ...(stored || {})};
@@ -501,28 +544,29 @@ function collectSettings(){
 function loadSettings(){ applySettings(getStoredSettings()); }
 function saveSettings(){
   const s=collectSettings();
-  localStorage.setItem('bolusSettingsV05', JSON.stringify(s));
+  localStorage.setItem('bolusSettingsV06', JSON.stringify(s));
   alert('Einstellungen lokal gespeichert.');
   if(s.nightscoutAuto) loadNightscoutData(false);
 }
 function restoreSettings(){
-  localStorage.removeItem('bolusSettingsV05');
+  localStorage.removeItem('bolusSettingsV06');
   applySettings(defaults);
 }
 function loadHelpers(){
-  helpers = JSON.parse(localStorage.getItem('bolusHelpersV05') || 'null')
+  helpers = JSON.parse(localStorage.getItem('bolusHelpersV06') || 'null')
+    || JSON.parse(localStorage.getItem('bolusHelpersV05') || 'null')
     || JSON.parse(localStorage.getItem('bolusHelpersV04') || 'null')
     || deepClone(defaultHelpers);
   renderHelperEditor();
 }
 function saveHelpers(){
   syncHelpersFromEditor();
-  localStorage.setItem('bolusHelpersV05', JSON.stringify(helpers));
+  localStorage.setItem('bolusHelpersV06', JSON.stringify(helpers));
   alert('KH-Helfer lokal gespeichert.');
 }
 function restoreHelpers(){
   helpers=deepClone(defaultHelpers);
-  localStorage.removeItem('bolusHelpersV05');
+  localStorage.removeItem('bolusHelpersV06');
   renderHelperEditor();
 }
 function speedLabel(s){ return s==='fast'?'schnell':s==='medium'?'mittel':'nachhaltiger'; }
@@ -603,10 +647,10 @@ function importDataFile(file){
       if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Dateiformat');
       const importedSettings={...defaults,...(data.settings||{})};
       importedSettings.nightscoutToken=getStoredSettings().nightscoutToken || '';
-      localStorage.setItem('bolusSettingsV05',JSON.stringify(importedSettings));
+      localStorage.setItem('bolusSettingsV06',JSON.stringify(importedSettings));
       if(Array.isArray(data.helpers)){
         helpers=data.helpers;
-        localStorage.setItem('bolusHelpersV05',JSON.stringify(helpers));
+        localStorage.setItem('bolusHelpersV06',JSON.stringify(helpers));
       }
       applySettings(importedSettings);
       renderHelperEditor();
@@ -630,6 +674,35 @@ function automaticLevel(fat, protein, carbs){
   if(carbs>=90&&fat>=30){ level='L4'; reason='große kohlenhydratreiche Mahlzeit mit viel Fett'; }
   return {level,reason};
 }
+
+function levelFromFpe(fpe){
+  if(fpe >= 6) return {level:'L4',reason:'hohe Fett-/Proteinenergie'};
+  if(fpe >= 3) return {level:'L3',reason:'deutlich erhöhte Fett-/Proteinenergie'};
+  if(fpe >= 1) return {level:'L2',reason:'mäßige Fett-/Proteinenergie'};
+  return {level:'L1',reason:'geringe Fett-/Proteinenergie'};
+}
+function updateMealFromMacros(source='macro'){
+  const fat=n('fat'), protein=n('protein'), carbs=n('carbs');
+  const calculated=(9*fat+4*protein)/100;
+  if(source==='macro'){
+    fpeManual=false;
+    $('directFpe').value=calculated.toFixed(1);
+    const auto=automaticLevel(fat,protein,carbs);
+    $('mealLevel').value=auto.level;
+    mealLevelManual=false;
+    $('mealLevelState').textContent='Automatisch aus Fett und Protein berechnet.';
+  }else if(source==='fpe'){
+    const fpe=n('directFpe');
+    fpeManual=true;
+    if(fat===0&&protein===0){
+      const auto=levelFromFpe(fpe);
+      $('mealLevel').value=auto.level;
+      mealLevelManual=false;
+      $('mealLevelState').textContent='Automatisch aus FPE geschätzt.';
+    }
+  }
+}
+
 function mealHint(level){
   return {
     L1:'frühe Wirkung; kaum KH-Anteil zurückhalten',
@@ -724,8 +797,8 @@ function calculate(){
   const glucose=toMmol(n('glucose')), target=toMmol(n('target')), isf=isfToMmol(n('isf'));
   const iob=n('iob'), cob=n('cob'), iobEffective=n('iobEffective');
   const carbs=n('carbs'), fat=n('fat'), protein=n('protein');
-  const directFpe=$('directFpe').value===''?null:n('directFpe');
-  const manualLevel=$('mealLevel').value, levelMode=$('levelMode').value;
+  const directFpe=n('directFpe');
+  const manualLevel=$('mealLevel').value;
   const activity=$('activity').value, reduction=getReduction(activity);
   const timing=$('timing').value, trend=$('trend').value, manual=n('manualAdjust');
   const carbRatio=n('carbRatio'), fpeRatio=n('fpeRatio'), rounding=n('rounding');
@@ -733,9 +806,7 @@ function calculate(){
 
   if(isf<=0||carbRatio<=0||fpeRatio<=0){ alert('Bitte gültige Faktoren eingeben.'); return; }
 
-  const auto=automaticLevel(fat,protein,carbs);
-  const macrosEntered=(fat>0||protein>0);
-  const usedLevel=(levelMode==='auto'&&macrosEntered)?auto.level:manualLevel;
+  const usedLevel=manualLevel;
   const hypoThreshold=3.9;
 
   const warnings=[];
@@ -745,10 +816,7 @@ function calculate(){
   if(activity!=='NONE'&&['A2','A3'].includes(activity)) warnings.push(['warn','Hohe Aktivität kann länger und stärker nachwirken als dieses vereinfachte Modell abbildet.']);
   if(activity!=='NONE'&&['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
   if(activity==='NONE') warnings.push(['warn','Es wurde keine Aktivitätsanpassung gewählt: weder Bolusreduktion noch Aktivitätspuffer werden angewendet.']);
-  if(levelMode==='auto'&&macrosEntered&&auto.level!==manualLevel)
-    warnings.push(['warn',`Makronährstoffe sprechen für ${auto.level}, manuell gewählt war ${manualLevel}. Für die Splitberechnung wird ${auto.level} verwendet.`]);
-  if(directFpe!==null&&!macrosEntered)
-    warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung unsicher.']);
+  if(fpeManual&&fat===0&&protein===0&&directFpe>0) warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung eine grobe Schätzung.']);
   if(cob>0) warnings.push(['warn',`${fmt(cob,0)} g COB sind noch angegeben. COB wird nur angezeigt und nicht automatisch als neuer Mahlzeitenbedarf oder IOB-Gegenwirkung verrechnet.`]);
 
   const baseBolus=carbs/carbRatio;
@@ -765,12 +833,11 @@ function calculate(){
   const delayedCarbDose=Math.max(0,afterManual-initialCarbDose);
   const immediateNet=initialCarbDose+correction-effectiveIob;
 
-  const fpe=directFpe!==null?directFpe:((9*fat+4*protein)/100);
+  const fpe=directFpe;
   const fpeDose=fpe/fpeRatio;
   const totalNeed=Math.max(0,afterManual+correction-effectiveIob);
 
   $('usedLevel').textContent=usedLevel;
-  $('suggestedLevel').textContent=macrosEntered?`${auto.level} – ${auto.reason}`:'nicht berechnet';
   $('baseBolus').textContent=fmt(baseBolus)+' IE';
   $('activityAdj').textContent=activity==='NONE'?'keine':`−${fmt(baseBolus-afterActivity)} IE (${fmt(reduction,0)} %)`;
   $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManual-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
@@ -827,12 +894,12 @@ function calculate(){
 
 function resetInputs(){
   ['carbs','fat','protein','iob','cob','iobEffective','manualAdjust'].forEach(id=>$(id).value=0);
-  $('directFpe').value=''; $('mealName').value='';
+  $('directFpe').value='0.0'; $('mealName').value=''; mealLevelManual=false; fpeManual=false; $('mealLevelState').textContent='Automatisch aus Fett und Protein berechnet.';
   $('glucose').value=currentUnit==='mgdl'?'108':'6.0';
   $('target').value=currentUnit==='mgdl'?'108':'6.0';
   $('isf').value=currentUnit==='mgdl'?'36':'2.0';
   $('trend').value='stable'; $('activity').value='A1'; $('mealLevel').value='L2';
-  $('levelMode').value='auto'; $('timing').value='none'; $('resultCard').hidden=true;
+$('timing').value='none'; $('resultCard').hidden=true;
 }
 
 function cleanNightscoutConfig(){
@@ -898,6 +965,116 @@ function findNumericDeep(obj, targetKeys, maxDepth=8, depth=0){
   }
   return null;
 }
+
+function parseNumberLoose(value){
+  if(Number.isFinite(Number(value))) return Number(value);
+  if(typeof value==='string'){
+    const m=value.replace(',','.').match(/-?\d+(?:\.\d+)?/);
+    if(m) return Number(m[0]);
+  }
+  return null;
+}
+function findPropertyObject(obj,key){
+  if(!obj||typeof obj!=='object') return null;
+  for(const [k,v] of Object.entries(obj)){
+    if(k.toLowerCase()===key.toLowerCase()) return v;
+  }
+  for(const v of Object.values(obj)){
+    if(v&&typeof v==='object'){
+      const found=findPropertyObject(v,key);
+      if(found!=null) return found;
+    }
+  }
+  return null;
+}
+function extractPropertyNumber(obj,key){
+  const prop=findPropertyObject(obj,key);
+  if(prop==null) return null;
+  const direct=parseNumberLoose(prop);
+  if(direct!=null) return direct;
+  return findNumericDeep(prop,['value','amount','display','iob','cob','current','status'],10);
+}
+function normalizeProfileResponse(data){
+  const docs=Array.isArray(data)?data:[data];
+  if(!docs.length||!docs[0]) return null;
+  const doc=docs[0];
+  const name=doc.defaultProfile||doc.defaultprofile||Object.keys(doc.store||{})[0];
+  const profile=(doc.store&&name&&doc.store[name]) || doc.profile || doc;
+  return {doc,name:name||'Profil',profile};
+}
+function minutesNow(){
+  const d=new Date();
+  return d.getHours()*60+d.getMinutes();
+}
+function scheduleValue(schedule){
+  if(Number.isFinite(Number(schedule))) return Number(schedule);
+  if(!Array.isArray(schedule)||!schedule.length) return null;
+  const now=minutesNow();
+  let selected=schedule[0];
+  for(const item of schedule){
+    let mins=Number(item.timeAsSeconds)/60;
+    if(!Number.isFinite(mins)&&typeof item.time==='string'){
+      const [h,m]=item.time.split(':').map(Number);
+      mins=h*60+m;
+    }
+    if(Number.isFinite(mins)&&mins<=now) selected=item;
+  }
+  return parseNumberLoose(selected.value??selected.amount??selected);
+}
+function profileValues(data){
+  const normalized=normalizeProfileResponse(data);
+  if(!normalized) return null;
+  const p=normalized.profile||{};
+  const units=String(p.units||normalized.doc.units||'mg/dl').toLowerCase();
+  let sens=scheduleValue(p.sens??p.isf??p.sensitivity);
+  if(sens!=null&&units.includes('mg')) sens/=18;
+  const dia=parseNumberLoose(p.dia??p.insulinDuration??p.insulin_duration);
+  const carbsHr=parseNumberLoose(p.carbs_hr??p.carbsHr??p.carbAbsorptionRate);
+  const carbRatio=scheduleValue(p.carbratio??p.carb_ratio??p.ic);
+  return {name:normalized.name,sensMmol:sens,dia,carbsHr,carbRatio,units};
+}
+function treatmentTime(t){
+  const raw=t.mills??t.date??t.created_at??t.timestamp??t.eventTime;
+  const d=typeof raw==='number'?new Date(raw):new Date(raw);
+  return Number.isNaN(d.getTime())?null:d;
+}
+function treatmentInsulin(t){
+  return parseNumberLoose(t.insulin??t.bolus??t.enteredinsulin??t.amount);
+}
+function treatmentCarbs(t){
+  return parseNumberLoose(t.carbs??t.carbohydrates??t.enteredcarbs);
+}
+function approximateIob(treatments,diaHours){
+  if(!Array.isArray(treatments)||!Number.isFinite(diaHours)||diaHours<=0) return null;
+  let total=0,found=false;
+  for(const t of treatments){
+    const dose=treatmentInsulin(t),time=treatmentTime(t);
+    if(!(dose>0)||!time) continue;
+    const age=(Date.now()-time.getTime())/3600000;
+    if(age<0||age>=diaHours) continue;
+    const fraction=0.5*(1+Math.cos(Math.PI*age/diaHours));
+    total+=dose*fraction;
+    found=true;
+  }
+  return found?Math.max(0,total):0;
+}
+function approximateCob(treatments,carbsHr){
+  if(!Array.isArray(treatments)||!Number.isFinite(carbsHr)||carbsHr<=0) return null;
+  let total=0,found=false;
+  for(const t of treatments){
+    const carbs=treatmentCarbs(t),time=treatmentTime(t);
+    if(!(carbs>0)||!time) continue;
+    const age=(Date.now()-time.getTime())/3600000;
+    if(age<0) continue;
+    total+=Math.max(0,carbs-carbsHr*age);
+    found=true;
+  }
+  return found?Math.max(0,total):0;
+}
+function dataAgeText(mins){
+  return mins===1?'1 Minute alt':`${mins} Minuten alt`;
+}
+
 async function fetchJson(url){
   const response=await fetch(url,{cache:'no-store',headers:{'Accept':'application/json'}});
   if(!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -915,13 +1092,20 @@ async function loadNightscoutData(showAlert=true){
   $('loadNightscout').disabled=true;
   setNsStatus('Daten werden geladen …');
   try{
-    const entriesUrl=apiUrl(cfg.url,'/api/v1/entries/sgv.json?count=2',cfg.token);
-    const deviceUrl=apiUrl(cfg.url,'/api/v1/devicestatus.json?count=10',cfg.token);
-    const [entryResult,deviceResult]=await Promise.allSettled([fetchJson(entriesUrl),fetchJson(deviceUrl)]);
+    const urls={
+      entries:apiUrl(cfg.url,'/api/v1/entries/sgv.json?count=2',cfg.token),
+      properties:apiUrl(cfg.url,'/api/v2/properties',cfg.token),
+      profile:apiUrl(cfg.url,'/api/v1/profile.json',cfg.token),
+      treatments:apiUrl(cfg.url,'/api/v1/treatments.json?count=200',cfg.token)
+    };
+    const [entryResult,propertyResult,profileResult,treatmentResult]=await Promise.allSettled([
+      fetchJson(urls.entries),fetchJson(urls.properties),fetchJson(urls.profile),fetchJson(urls.treatments)
+    ]);
 
     if(entryResult.status!=='fulfilled'||!Array.isArray(entryResult.value)||!entryResult.value.length){
       throw new Error('Kein aktueller Glukosewert verfügbar');
     }
+
     const entries=entryResult.value;
     const latest=entries[0];
     const sgv=Number(latest.sgv??latest.glucose);
@@ -937,46 +1121,172 @@ async function loadNightscoutData(showAlert=true){
         if(mins>0) slope=(sgv-g2)/mins;
       }
     }
-    $('trend').value=mapDirection(latest.direction,slope);
+    const mappedTrend=mapDirection(latest.direction,slope);
+    $('trend').value=mappedTrend;
+
     const t=entryTime(latest);
-    if(t){
-      const mins=Math.max(0,Math.round((Date.now()-t.getTime())/60000));
-      $('glucoseAge').textContent=`Nightscout-Messwert: ${mins} Min. alt`;
-      setNsStatus(`${currentUnit==='mgdl'?Math.round(sgv):(sgv/18).toFixed(1)} ${unitText()}, ${mins} Min. alt`,'good');
+    const mins=t?Math.max(0,Math.round((Date.now()-t.getTime())/60000)):null;
+    if(mins!=null){
+      const age=dataAgeText(mins);
+      $('glucoseAge').textContent=`Nightscout, ${age}`;
+      $('trendSource').textContent=`Nightscout, ${age}`;
+      setNsStatus(`${currentUnit==='mgdl'?Math.round(sgv):(sgv/18).toFixed(1)} ${unitText()}, ${age}`,'good');
     }else{
-      $('glucoseAge').textContent='aus Nightscout geladen';
-      setNsStatus('Glukosewert geladen','good');
+      $('glucoseAge').textContent='Aus Nightscout geladen';
+      $('trendSource').textContent='Aus Nightscout geladen';
+      setNsStatus('Glukosewert und Trend geladen','good');
     }
 
-    let iobFound=null,cobFound=null;
-    if(deviceResult.status==='fulfilled'&&Array.isArray(deviceResult.value)){
-      for(const ds of deviceResult.value){
-        if(iobFound==null) iobFound=findNumericDeep(ds,['iob']);
-        if(cobFound==null) cobFound=findNumericDeep(ds,['cob']);
-        if(iobFound!=null&&cobFound!=null) break;
-      }
+    const profile=profileResult.status==='fulfilled'?profileValues(profileResult.value):null;
+    if(profile?.sensMmol>0){
+      $('isf').value=currentUnit==='mgdl'?Math.round(profile.sensMmol*18):profile.sensMmol.toFixed(1);
+      $('isfSource').textContent=`Aus Nightscout-Profil „${profile.name}“, aktueller Zeitblock`;
+    }else{
+      $('isfSource').textContent='Nicht aus Nightscout verfügbar – bitte manuell prüfen.';
     }
+
+    const properties=propertyResult.status==='fulfilled'?propertyResult.value:null;
+    let iobFound=properties?extractPropertyNumber(properties,'iob'):null;
+    let cobFound=properties?extractPropertyNumber(properties,'cob'):null;
+    let iobMethod=iobFound!=null?'Nightscout-Eigenschaft /api/v2/properties':'';
+    let cobMethod=cobFound!=null?'Nightscout-Eigenschaft /api/v2/properties':'';
+
+    const treatments=treatmentResult.status==='fulfilled'&&Array.isArray(treatmentResult.value)?treatmentResult.value:null;
+    if(iobFound==null&&profile&&treatments){
+      iobFound=approximateIob(treatments,profile.dia);
+      if(iobFound!=null) iobMethod=`lokale Näherung aus CarePortal und DIA ${profile.dia??'?' } h`;
+    }
+    if(cobFound==null&&profile&&treatments){
+      cobFound=approximateCob(treatments,profile.carbsHr);
+      if(cobFound!=null) cobMethod=`lokal aus CarePortal und ${profile.carbsHr??'?'} g/h berechnet`;
+    }
+
     if(iobFound!=null){
       $('iob').value=Math.max(0,iobFound).toFixed(2);
-      $('iobSource').textContent='aus Nightscout devicestatus geladen';
+      $('iobSource').textContent=iobMethod;
     }else{
-      $('iobSource').textContent='in Nightscout nicht gefunden – bitte manuell eingeben';
+      $('iobSource').textContent='Nicht verfügbar – bitte manuell eingeben.';
     }
     if(cobFound!=null){
       $('cob').value=Math.max(0,cobFound).toFixed(0);
-      $('cobSource').textContent='aus Nightscout devicestatus geladen; nur Information';
+      $('cobSource').textContent=cobMethod+'; nur Information';
     }else{
-      $('cobSource').textContent='in Nightscout nicht gefunden – bei Bedarf manuell eingeben';
+      $('cobSource').textContent='Nicht verfügbar – bei Bedarf manuell eingeben.';
     }
-    if(showAlert) alert(`Nightscout-Verbindung erfolgreich.\nGlukose: verfügbar\nIOB: ${iobFound!=null?'verfügbar':'nicht gefunden'}\nCOB: ${cobFound!=null?'verfügbar':'nicht gefunden'}`);
+
+    latestNightscoutMeta={profile,iobMethod,cobMethod,mins,trend:mappedTrend};
+    const profileParts=[];
+    if(profile?.sensMmol) profileParts.push(`ISF ${profile.sensMmol.toFixed(1)} mmol/l je IE`);
+    if(profile?.dia) profileParts.push(`DIA ${profile.dia} h`);
+    if(profile?.carbsHr) profileParts.push(`KH-Absorption ${profile.carbsHr} g/h`);
+    if(profile?.carbRatio) profileParts.push(`KH-Faktor ${profile.carbRatio} g/IE`);
+    if(profileParts.length){
+      $('nightscoutProfileInfo').hidden=false;
+      $('nightscoutProfileInfo').textContent=`Nightscout-Profil „${profile.name}“: ${profileParts.join(' · ')}`;
+    }else{
+      $('nightscoutProfileInfo').hidden=true;
+    }
+
+    if(showAlert){
+      alert(
+`Nightscout-Verbindung erfolgreich.
+Glukose: verfügbar${mins!=null?' ('+dataAgeText(mins)+')':''}
+Trend: verfügbar (${mappedTrend})
+ISF/Profil: ${profile?.sensMmol?'verfügbar':'nicht gefunden'}
+IOB: ${iobFound!=null?'verfügbar – '+iobMethod:'nicht gefunden'}
+COB: ${cobFound!=null?'verfügbar – '+cobMethod:'nicht gefunden'}
+KH-Absorption: ${profile?.carbsHr?profile.carbsHr+' g/h':'nicht gefunden'}`
+      );
+    }
   }catch(err){
     setNsStatus('Laden fehlgeschlagen – Werte bitte manuell eingeben.','bad');
     $('glucoseAge').textContent='';
+    $('trendSource').textContent='';
     if(showAlert) alert('Nightscout konnte nicht geladen werden: '+err.message);
   }finally{
     refreshing=false;
     $('loadNightscout').disabled=false;
   }
+}
+
+
+function buildTransferPayload(includeToken=false){
+  syncHelpersFromEditor();
+  const settings=collectSettings();
+  if(!includeToken) settings.nightscoutToken='';
+  return {f:'bolusrechner-settings',v:APP_VERSION,s:settings,h:helpers};
+}
+function encodeQrPayload(payload){
+  const json=JSON.stringify(payload);
+  return 'BOLUSQR1:'+btoa(unescape(encodeURIComponent(json)));
+}
+function decodeQrPayload(text){
+  if(!text.startsWith('BOLUSQR1:')) throw new Error('Kein Bolusrechner-QR-Code');
+  const json=decodeURIComponent(escape(atob(text.slice(9))));
+  const compact=JSON.parse(json);
+  return {format:compact.f,version:compact.v,settings:compact.s,helpers:compact.h};
+}
+function applyImportedPayload(data){
+  if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Format');
+  const imported={...defaults,...(data.settings||{})};
+  const currentToken=getStoredSettings().nightscoutToken||'';
+  if(!imported.nightscoutToken) imported.nightscoutToken=currentToken;
+  localStorage.setItem('bolusSettingsV06',JSON.stringify(imported));
+  if(Array.isArray(data.helpers)){
+    helpers=data.helpers;
+    localStorage.setItem('bolusHelpersV06',JSON.stringify(helpers));
+  }
+  applySettings(imported);
+  renderHelperEditor();
+}
+function showQrExport(){
+  if(typeof qrcode!=='function'){
+    alert('QR-Bibliothek noch nicht geladen. Bitte kurz online bleiben und erneut versuchen.');
+    return;
+  }
+  try{
+    const payload=buildTransferPayload($('qrIncludeToken').checked);
+    const encoded=encodeQrPayload(payload);
+    const qr=qrcode(0,'L');
+    qr.addData(encoded);
+    qr.make();
+    $('qrModalTitle').textContent='Einstellungen als QR-Code';
+    $('qrContent').innerHTML=`<div class="qr-panel">${qr.createImgTag(5,12)}<p class="hint">Diesen Code auf dem anderen Gerät über „QR-Code einlesen“ erfassen.</p></div>`;
+    $('qrModal').hidden=false;
+  }catch(err){
+    alert('QR-Code konnte nicht erstellt werden: '+err.message);
+  }
+}
+function scanQrImage(file){
+  if(typeof jsQR!=='function'){
+    alert('QR-Lesebibliothek noch nicht geladen. Bitte kurz online bleiben und erneut versuchen.');
+    return;
+  }
+  const img=new Image();
+  img.onload=()=>{
+    try{
+      const canvas=document.createElement('canvas');
+      const max=1800,scale=Math.min(1,max/Math.max(img.width,img.height));
+      canvas.width=Math.round(img.width*scale); canvas.height=Math.round(img.height*scale);
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      const data=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsQR(data.data,data.width,data.height,{inversionAttempts:'attemptBoth'});
+      if(!code) throw new Error('Kein lesbarer QR-Code gefunden');
+      const payload=decodeQrPayload(code.data);
+      const summary=`Version ${payload.version||'?'} · ${Array.isArray(payload.helpers)?payload.helpers.length:0} KH-Helfer · Nightscout-Token ${payload.settings?.nightscoutToken?'enthalten':'nicht enthalten'}`;
+      if(confirm(`Einstellungen importieren?\n${summary}\n\nVorhandene Einstellungen werden ersetzt.`)){
+        applyImportedPayload(payload);
+        alert('QR-Einstellungen wurden importiert.');
+      }
+    }catch(err){
+      alert('QR-Import fehlgeschlagen: '+err.message);
+    }finally{
+      URL.revokeObjectURL(img.src);
+    }
+  };
+  img.onerror=()=>alert('Bild konnte nicht geöffnet werden.');
+  img.src=URL.createObjectURL(file);
 }
 
 function setupUpdates(){
@@ -1009,6 +1319,25 @@ $('applyUpdate').addEventListener('click',()=>{
   else location.reload();
 });
 
+$('fat').addEventListener('input',()=>updateMealFromMacros('macro'));
+$('protein').addEventListener('input',()=>updateMealFromMacros('macro'));
+$('carbs').addEventListener('input',()=>{
+  if(!mealLevelManual) updateMealFromMacros((n('fat')>0||n('protein')>0)?'macro':'fpe');
+});
+$('directFpe').addEventListener('input',()=>updateMealFromMacros('fpe'));
+$('mealLevel').addEventListener('change',()=>{
+  mealLevelManual=true;
+  $('mealLevelState').textContent='Manuell ausgewählt.';
+});
+$('exportQr').addEventListener('click',showQrExport);
+$('importQr').addEventListener('click',()=>$('qrImageFile').click());
+$('qrImageFile').addEventListener('change',e=>{
+  if(e.target.files[0]) scanQrImage(e.target.files[0]);
+  e.target.value='';
+});
+$('closeQrModal').addEventListener('click',()=>$('qrModal').hidden=true);
+$('qrModal').addEventListener('click',e=>{ if(e.target===$('qrModal')) $('qrModal').hidden=true; });
+
 $('calculate').addEventListener('click',calculate);
 $('reset').addEventListener('click',resetInputs);
 $('saveSettings').addEventListener('click',saveSettings);
@@ -1028,6 +1357,7 @@ $('importFile').addEventListener('change',e=>{
 
 loadSettings();
 loadHelpers();
+updateMealFromMacros('macro');
 setupUpdates();
 if($('nightscoutAuto').checked) setTimeout(()=>loadNightscoutData(false),250);
 else setNsStatus('automatisches Laden ist ausgeschaltet – Werte bitte manuell eingeben.');
