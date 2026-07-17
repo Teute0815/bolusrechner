@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#0f172a" />
   <title>Offline-Bolusrechner</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
     :root{
       --bg:#f3f4f6; --card:#ffffff; --text:#111827; --muted:#6b7280;
@@ -50,34 +52,61 @@
     .helper strong{display:block}
     .mini-btn{width:auto;padding:8px 10px}
     [hidden]{display:none !important}
+
+    .statusbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+    .status-text{font-size:.82rem;color:var(--muted)}
+    .status-text.good{color:var(--ok)}
+    .status-text.bad{color:var(--danger)}
+    .compact-btn{width:auto;padding:9px 12px}
+    .update-banner{position:sticky;top:78px;z-index:4;background:#dbeafe;color:#1e3a8a;border:1px solid #93c5fd;border-radius:12px;padding:11px 12px;margin-bottom:14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .update-banner button{width:auto;background:#1d4ed8;color:white;padding:8px 12px}
+    .inline-check{display:flex;align-items:center;gap:8px}
+    .inline-check input{width:auto}
+    .file-input{display:none}
+    .version{font-size:.72rem;color:#9ca3af;margin-top:4px}
+    @media(max-width:620px){
+      main{padding:10px}
+      .card{padding:14px;border-radius:12px}
+      header{padding:14px 12px}
+      input,select,button{font-size:16px}
+      .line{align-items:flex-start}
+      .line span:first-child{max-width:58%}
+      .result{font-size:1.6rem}
+      .row{flex-direction:column}
+      .update-banner{top:68px}
+    }
   </style>
 </head>
 <body>
 <header>
-  <h1>Offline-Bolusrechner – Testversion 0.4</h1>
-  <p>Netto-Rechnung mit Split, FPE und Aktivitätspuffer.</p>
+  <h1>Offline-Bolusrechner – Testversion 0.5</h1>
+  <p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p>
 </header>
 
 <main>
+  <div id="updateBanner" class="update-banner" hidden><span>Neue Version verfügbar.</span><button id="applyUpdate">Jetzt aktualisieren</button></div>
   <section class="card">
-    <h2>Aktuelle Situation</h2>
+    <div class="statusbar">
+      <div>
+        <h2 style="margin-bottom:3px">Aktuelle Situation</h2>
+        <div id="nightscoutStatus" class="status-text">Nightscout: nicht eingerichtet – Werte bitte manuell eingeben.</div>
+      </div>
+      <button id="loadNightscout" class="secondary compact-btn">Daten neu laden</button>
+    </div>
     <div class="grid">
       <div>
-        <label for="glucose">Glukose aktuell (mmol/l)</label>
+        <label for="glucose">Glukose aktuell (<span class="glucoseUnitLabel">mmol/l</span>)</label>
         <input id="glucose" type="number" min="0" step="0.1" value="6.0">
+        <small id="glucoseAge"></small>
       </div>
       <div>
-        <label for="target">Zielwert (mmol/l)</label>
-        <select id="target">
-          <option value="6">6,0</option>
-          <option value="6.5">6,5</option>
-          <option value="7">7,0</option>
-        </select>
+        <label for="target">Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
+        <input id="target" type="number" min="0" step="0.1" value="6.0">
       </div>
       <div>
-        <label for="isf">Korrekturfaktor / ISF</label>
+        <label for="isf">Korrekturfaktor / ISF (<span class="isfUnitLabel">mmol/l je IE</span>)</label>
         <input id="isf" type="number" min="0.1" step="0.1" value="2.0">
-        <small>Vorerst: 1 IE senkt ungefähr um diesen Wert.</small>
+        <small>1 IE senkt ungefähr um diesen Wert.</small>
       </div>
       <div>
         <label for="trend">Trend</label>
@@ -92,6 +121,12 @@
       <div>
         <label for="iob">Gesamt-IOB laut Anzeige (IE)</label>
         <input id="iob" type="number" min="0" step="0.1" value="0">
+        <small id="iobSource"></small>
+      </div>
+      <div>
+        <label for="cob">COB / noch wirksame Kohlenhydrate (g)</label>
+        <input id="cob" type="number" min="0" step="1" value="0">
+        <small id="cobSource">Nur Information; wird nicht automatisch vom Bolus abgezogen.</small>
       </div>
       <div>
         <label for="iobEffective">IOB, das noch den Glukosewert senken wird (IE)</label>
@@ -100,7 +135,7 @@
       </div>
     </div>
     <div class="notice warn">
-      Reines Korrektur-IOB meist vollständig eintragen. IOB eines noch laufenden Mahlzeitenbolus meist nicht vollständig.
+      Nightscout-IOB kann den Ursprung des Insulins nicht sicher unterscheiden. „Noch senkendes IOB“ bleibt daher bewusst eine manuelle Einschätzung.
     </div>
   </section>
 
@@ -152,7 +187,8 @@
       <div>
         <label for="activity">Aktivitätslevel</label>
         <select id="activity">
-          <option value="A0">A0 – ungewöhnlich inaktiv</option>
+          <option value="NONE">Keine Aktivitätsanpassung</option>
+          <option value="A0">A0 – Basisprofil ohne Reduktion</option>
           <option value="A1" selected>A1 – normaler Alltag mit langem Gassi</option>
           <option value="A2">A2 – deutlich aktiver Tag</option>
           <option value="A3">A3 – außergewöhnlich hohe Aktivität</option>
@@ -226,6 +262,7 @@
       <div class="line"><span>Manuelle Anpassung</span><span id="manualAdj">–</span></div>
       <div class="line"><span>Korrekturanteil</span><span id="correction">–</span></div>
       <div class="line"><span>Noch senkendes IOB</span><span id="iobDeduction">–</span></div>
+      <div class="line"><span>COB (Information)</span><span id="cobBreakdown">–</span></div>
       <div class="line"><span>Aktivitätspuffer</span><span id="activityBuffer">–</span></div>
       <div class="line"><span>Wirksamer KH-Faktor</span><span id="effectiveRatio">–</span></div>
       <div class="line"><span>FPE</span><span id="fpeValue">–</span></div>
@@ -273,8 +310,41 @@
   <section class="card">
     <details>
       <summary>Einstellungen</summary>
-      <div class="grid" style="margin-top:12px">
-        <div><label for="carbRatio">A0-Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
+
+      <h3>Anzeige</h3>
+      <div class="grid">
+        <div>
+          <label for="glucoseUnit">Glukoseeinheit</label>
+          <select id="glucoseUnit">
+            <option value="mmol">mmol/l</option>
+            <option value="mgdl">mg/dl</option>
+          </select>
+        </div>
+      </div>
+
+      <h3>Nightscout</h3>
+      <div class="grid">
+        <div>
+          <label for="nightscoutUrl">Nightscout-URL</label>
+          <input id="nightscoutUrl" type="url" placeholder="https://beispiel.azurewebsites.net">
+        </div>
+        <div>
+          <label for="nightscoutToken">Read-only-Token</label>
+          <input id="nightscoutToken" type="password" autocomplete="off" placeholder="readonly-…">
+        </div>
+        <div class="inline-check">
+          <input id="nightscoutAuto" type="checkbox" checked>
+          <label for="nightscoutAuto" style="margin:0">Nightscout-Daten beim Start automatisch laden</label>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="secondary" id="testNightscout">Nightscout-Verbindung testen</button>
+      </div>
+      <p class="hint">URL und Token werden nur lokal in diesem Browser gespeichert. Ein Read-only-Token verwenden, niemals das API_SECRET.</p>
+
+      <h3>Berechnungsparameter</h3>
+      <div class="grid">
+        <div><label for="carbRatio">Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
         <div><label for="fpeRatio">FPE pro 1 IE</label><input id="fpeRatio" type="number" min="0.1" step="0.1" value="3"></div>
         <div>
           <label for="rounding">Insulin-Dosisschritt (IE)</label>
@@ -292,7 +362,7 @@
             <option value="10">10 g</option>
           </select>
         </div>
-        <div><label for="hypoMinimum">Mindestmenge bei ≤3,9 oder fallend (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
+        <div><label for="hypoMinimum">Mindestmenge bei niedrigem oder fallendem Wert (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
         <div><label for="a0">A0 Reduktion (%)</label><input id="a0" type="number" min="0" max="90" step="5" value="0"></div>
         <div><label for="a1">A1 Reduktion (%)</label><input id="a1" type="number" min="0" max="90" step="5" value="20"></div>
         <div><label for="a2">A2 Reduktion (%)</label><input id="a2" type="number" min="0" max="90" step="5" value="40"></div>
@@ -308,69 +378,151 @@
         <div><label for="splitL3">L3 initial (%)</label><input id="splitL3" type="number" min="0" max="100" step="5" value="65"></div>
         <div><label for="splitL4">L4 initial (%)</label><input id="splitL4" type="number" min="0" max="100" step="5" value="50"></div>
       </div>
+
       <div class="row" style="margin-top:12px">
         <button class="primary" id="saveSettings">Einstellungen speichern</button>
         <button class="secondary" id="restoreSettings">Standardwerte</button>
       </div>
+
+      <h3>Sicherung und Übertragung</h3>
+      <div class="row">
+        <button class="secondary" id="exportData">Einstellungen exportieren</button>
+        <button class="secondary" id="importData">Einstellungen importieren</button>
+      </div>
+      <input class="file-input" id="importFile" type="file" accept="application/json,.json">
+      <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert.</p>
+      <div class="version">Programmversion 0.5</div>
     </details>
   </section>
 
   <div class="footer">
-    Persönliche Test- und Dokumentationshilfe, keine automatische Therapieentscheidung. Spätdosen immer anhand von Verlauf, IOB, Trend und tatsächlicher Nahrungswirkung neu beurteilen.
+    Test- und Dokumentationshilfe, keine automatische Therapieentscheidung. Spätdosen immer anhand von Verlauf, IOB, Trend und tatsächlicher Nahrungswirkung neu beurteilen.
   </div>
 </main>
 
 <script>
+const APP_VERSION = '0.5';
 const $ = id => document.getElementById(id);
+
 const defaults = {
+  glucoseUnit:'mmol',
   carbRatio:10, fpeRatio:3, rounding:0.5, carbRounding:5, hypoMinimum:15,
   a0:0, a1:20, a2:40, a3:55,
   bufferA0:0, bufferA1:10, bufferA2:20, bufferA3:30,
-  splitL1:100, splitL2:80, splitL3:65, splitL4:50
+  splitL1:100, splitL2:80, splitL3:65, splitL4:50,
+  nightscoutUrl:'', nightscoutToken:'', nightscoutAuto:true
 };
+const numericSettingIds = [
+  'carbRatio','fpeRatio','rounding','carbRounding','hypoMinimum',
+  'a0','a1','a2','a3','bufferA0','bufferA1','bufferA2','bufferA3',
+  'splitL1','splitL2','splitL3','splitL4'
+];
 const defaultHelpers = [
-  {name:'Fior di Grano Mürbekeks', unit:'1 Keks', carbs:6.2, step:0.5, speed:'medium'},
-  {name:'Bio-Aprikose, getrocknet', unit:'1 Stück', carbs:8.0, step:0.5, speed:'medium'},
-  {name:'Fruchtschnitte Waldfrucht', unit:'1 Riegel', carbs:20.4, step:1/3, speed:'fast'},
-  {name:'Orangen-Mango-Saft', unit:'150 ml Glas', carbs:13.9, step:0.5, speed:'fast'},
-  {name:'Maracuja-Saft', unit:'150 ml Glas', carbs:18.6, step:0.5, speed:'fast'},
-  {name:'Toastie mit Käse', unit:'1 Portion', carbs:31.0, step:0.5, speed:'sustained'},
+  {name:'Mürbekeks', unit:'1 Keks', carbs:6.2, step:0.5, speed:'medium'},
+  {name:'Getrocknete Aprikose', unit:'1 Stück', carbs:8.0, step:0.5, speed:'medium'},
+  {name:'Fruchtriegel', unit:'1 Riegel', carbs:20.4, step:1/3, speed:'fast'},
+  {name:'Fruchtsaft', unit:'150 ml Glas', carbs:13.9, step:0.5, speed:'fast'},
+  {name:'Süßer Fruchtsaft', unit:'150 ml Glas', carbs:18.6, step:0.5, speed:'fast'},
+  {name:'Toastie', unit:'1 Portion', carbs:31.0, step:0.5, speed:'sustained'},
   {name:'Apfel, mittel (Schätzwert)', unit:'1 Apfel', carbs:15.0, step:0.5, speed:'medium'}
 ];
+
 let helpers = [];
+let currentUnit = 'mmol';
+let refreshing = false;
+let pendingWorker = null;
 
 function n(id){ return Number($(id).value || 0); }
 function fmt(v, digits=1){ return Number(v).toLocaleString('de-DE',{minimumFractionDigits:digits,maximumFractionDigits:digits}); }
 function roundStep(value, step){ return Math.round(value/step)*step; }
 function ceilStep(value, step){ return Math.ceil(value/step)*step; }
 function levelNumber(l){ return Number(l.slice(1)); }
+function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
 
-function loadSettings(){
-  const s = {...defaults, ...(JSON.parse(localStorage.getItem('bolusSettingsV04') || '{}'))};
-  Object.keys(defaults).forEach(k => $(k).value = s[k]);
+function toMmol(value){ return currentUnit === 'mgdl' ? value / 18 : value; }
+function isfToMmol(value){ return currentUnit === 'mgdl' ? value / 18 : value; }
+function fromMmol(value){ return currentUnit === 'mgdl' ? value * 18 : value; }
+function glucoseDigits(){ return currentUnit === 'mgdl' ? 0 : 1; }
+function formatGlucose(mmol){ return fmt(fromMmol(mmol), glucoseDigits()); }
+function unitText(){ return currentUnit === 'mgdl' ? 'mg/dl' : 'mmol/l'; }
+
+function setUnit(newUnit, convertValues=true){
+  if(newUnit !== 'mmol' && newUnit !== 'mgdl') return;
+  const oldUnit = currentUnit;
+  if(convertValues && oldUnit !== newUnit){
+    const ids=['glucose','target','isf'];
+    ids.forEach(id=>{
+      const el=$(id);
+      if(el.value==='') return;
+      let val=Number(el.value);
+      if(oldUnit==='mmol' && newUnit==='mgdl') val*=18;
+      if(oldUnit==='mgdl' && newUnit==='mmol') val/=18;
+      el.value = id==='isf' || newUnit==='mmol' ? val.toFixed(1) : Math.round(val);
+    });
+  }
+  currentUnit=newUnit;
+  document.querySelectorAll('.glucoseUnitLabel').forEach(el=>el.textContent=unitText());
+  document.querySelectorAll('.isfUnitLabel').forEach(el=>el.textContent=(currentUnit==='mgdl'?'mg/dl je IE':'mmol/l je IE'));
+  $('glucose').step=currentUnit==='mgdl'?'1':'0.1';
+  $('target').step=currentUnit==='mgdl'?'1':'0.1';
+  $('isf').step=currentUnit==='mgdl'?'1':'0.1';
 }
+
+function getStoredSettings(){
+  let stored = JSON.parse(localStorage.getItem('bolusSettingsV05') || 'null');
+  if(!stored){
+    const old = JSON.parse(localStorage.getItem('bolusSettingsV04') || 'null');
+    if(old) stored = {...old};
+  }
+  return {...defaults, ...(stored || {})};
+}
+function applySettings(s){
+  numericSettingIds.forEach(k=>{ if($(k)) $(k).value=s[k]; });
+  $('glucoseUnit').value=s.glucoseUnit || 'mmol';
+  $('nightscoutUrl').value=s.nightscoutUrl || '';
+  $('nightscoutToken').value=s.nightscoutToken || '';
+  $('nightscoutAuto').checked=s.nightscoutAuto !== false;
+  setUnit(s.glucoseUnit || 'mmol', false);
+  if(currentUnit==='mgdl'){
+    $('glucose').value='108';
+    $('target').value='108';
+    $('isf').value='36';
+  }
+}
+function collectSettings(){
+  const s={};
+  numericSettingIds.forEach(k=>s[k]=n(k));
+  s.glucoseUnit=$('glucoseUnit').value;
+  s.nightscoutUrl=$('nightscoutUrl').value.trim();
+  s.nightscoutToken=$('nightscoutToken').value.trim();
+  s.nightscoutAuto=$('nightscoutAuto').checked;
+  return s;
+}
+function loadSettings(){ applySettings(getStoredSettings()); }
 function saveSettings(){
-  const s = {};
-  Object.keys(defaults).forEach(k => s[k] = n(k));
-  localStorage.setItem('bolusSettingsV04', JSON.stringify(s));
+  const s=collectSettings();
+  localStorage.setItem('bolusSettingsV05', JSON.stringify(s));
   alert('Einstellungen lokal gespeichert.');
+  if(s.nightscoutAuto) loadNightscoutData(false);
 }
 function restoreSettings(){
-  localStorage.removeItem('bolusSettingsV04');
-  loadSettings();
+  localStorage.removeItem('bolusSettingsV05');
+  applySettings(defaults);
 }
 function loadHelpers(){
-  helpers = JSON.parse(localStorage.getItem('bolusHelpersV04') || 'null') || structuredClone(defaultHelpers);
+  helpers = JSON.parse(localStorage.getItem('bolusHelpersV05') || 'null')
+    || JSON.parse(localStorage.getItem('bolusHelpersV04') || 'null')
+    || deepClone(defaultHelpers);
   renderHelperEditor();
 }
 function saveHelpers(){
   syncHelpersFromEditor();
-  localStorage.setItem('bolusHelpersV04', JSON.stringify(helpers));
+  localStorage.setItem('bolusHelpersV05', JSON.stringify(helpers));
   alert('KH-Helfer lokal gespeichert.');
 }
 function restoreHelpers(){
-  helpers = structuredClone(defaultHelpers);
-  localStorage.removeItem('bolusHelpersV04');
+  helpers=deepClone(defaultHelpers);
+  localStorage.removeItem('bolusHelpersV05');
   renderHelperEditor();
 }
 function speedLabel(s){ return s==='fast'?'schnell':s==='medium'?'mittel':'nachhaltiger'; }
@@ -383,8 +535,8 @@ function renderHelperEditor(){
     div.className='helper';
     div.innerHTML=`
       <div class="grid">
-        <div><label>Name</label><input data-i="${i}" data-k="name" value="${h.name.replaceAll('"','&quot;')}"></div>
-        <div><label>Portion</label><input data-i="${i}" data-k="unit" value="${h.unit.replaceAll('"','&quot;')}"></div>
+        <div><label>Name</label><input data-i="${i}" data-k="name" value="${String(h.name).replaceAll('"','&quot;')}"></div>
+        <div><label>Portion</label><input data-i="${i}" data-k="unit" value="${String(h.unit).replaceAll('"','&quot;')}"></div>
         <div><label>KH pro Portion (g)</label><input type="number" step="0.1" min="0.1" data-i="${i}" data-k="carbs" value="${h.carbs}"></div>
         <div><label>Teilung</label>
           <select data-i="${i}" data-k="step">
@@ -425,30 +577,57 @@ function addHelper(){
   renderHelperEditor();
 }
 
+function exportData(){
+  syncHelpersFromEditor();
+  const settings=collectSettings();
+  settings.nightscoutToken='';
+  const payload={
+    format:'bolusrechner-settings',
+    version:APP_VERSION,
+    exportedAt:new Date().toISOString(),
+    settings,
+    helpers
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`bolusrechner-einstellungen-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importDataFile(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Dateiformat');
+      const importedSettings={...defaults,...(data.settings||{})};
+      importedSettings.nightscoutToken=getStoredSettings().nightscoutToken || '';
+      localStorage.setItem('bolusSettingsV05',JSON.stringify(importedSettings));
+      if(Array.isArray(data.helpers)){
+        helpers=data.helpers;
+        localStorage.setItem('bolusHelpersV05',JSON.stringify(helpers));
+      }
+      applySettings(importedSettings);
+      renderHelperEditor();
+      alert('Einstellungen und KH-Helfer wurden importiert. Das Nightscout-Token wird aus Sicherheitsgründen nicht importiert.');
+    }catch(err){
+      alert('Import fehlgeschlagen: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
 function automaticLevel(fat, protein, carbs){
   let level='L1';
   let reason='wenig Fett und keine starke Verzögerung aus den Makros erkennbar';
-
-  if(fat >= 40){
-    level='L4'; reason='sehr hoher Fettanteil';
-  } else if(fat >= 20){
-    level='L3'; reason='deutlich erhöhter Fettanteil';
-  } else if(fat >= 10){
-    level='L2'; reason='mäßig erhöhter Fettanteil';
-  }
-
-  if(fat >= 10 && protein >= 35 && levelNumber(level) < 3){
-    level='L3'; reason='Kombination aus Fett und viel Protein';
-  }
-  if(fat >= 25 && protein >= 40){
-    level='L4'; reason='viel Fett und viel Protein';
-  }
-  if(fat < 8 && protein >= 30){
-    level='L2'; reason='viel Protein bei wenig Fett: eher früher KH-Anstieg, aber mögliche spätere Proteinwirkung';
-  }
-  if(carbs >= 90 && fat >= 30){
-    level='L4'; reason='große kohlenhydratreiche Mahlzeit mit viel Fett';
-  }
+  if(fat>=40){ level='L4'; reason='sehr hoher Fettanteil'; }
+  else if(fat>=20){ level='L3'; reason='deutlich erhöhter Fettanteil'; }
+  else if(fat>=10){ level='L2'; reason='mäßig erhöhter Fettanteil'; }
+  if(fat>=10&&protein>=35&&levelNumber(level)<3){ level='L3'; reason='Kombination aus Fett und viel Protein'; }
+  if(fat>=25&&protein>=40){ level='L4'; reason='viel Fett und viel Protein'; }
+  if(fat<8&&protein>=30){ level='L2'; reason='viel Protein bei wenig Fett: eher früher KH-Anstieg, aber mögliche spätere Proteinwirkung'; }
+  if(carbs>=90&&fat>=30){ level='L4'; reason='große kohlenhydratreiche Mahlzeit mit viel Fett'; }
   return {level,reason};
 }
 function mealHint(level){
@@ -476,12 +655,11 @@ function fpeWindow(level){
   }[level];
 }
 function warningsHtml(items){
-  return items.length ? items.map(([cls,text])=>`<div class="notice ${cls}">${text}</div>`).join('')
-    : '<div class="notice ok">Keine offensichtliche Plausibilitätswarnung aus den eingegebenen Daten.</div>';
+  return items.length?items.map(([cls,text])=>`<div class="notice ${cls}">${text}</div>`).join('')
+    :'<div class="notice ok">Keine offensichtliche Plausibilitätswarnung aus den eingegebenen Daten.</div>';
 }
-function portionText(qty, unit){
-  const eps=0.02;
-  let q;
+function portionText(qty,unit){
+  const eps=0.02; let q;
   if(Math.abs(qty-1/3)<eps) q='⅓';
   else if(Math.abs(qty-2/3)<eps) q='⅔';
   else if(Math.abs(qty-0.5)<eps) q='½';
@@ -490,20 +668,20 @@ function portionText(qty, unit){
   else q=Number(qty.toFixed(2)).toLocaleString('de-DE');
   return `${q} × ${unit}`;
 }
-function helperSuggestions(target, preferFast){
+function helperSuggestions(target,preferFast){
   syncHelpersFromEditor();
   const candidates=[];
   helpers.forEach(h=>{
-    for(let qty=h.step; qty<=4+1e-9; qty+=h.step){
-      const carbs=h.carbs*qty;
-      let score=Math.abs(carbs-target);
-      if(preferFast && h.speed!=='fast') score+=4;
-      if(!preferFast && h.speed==='sustained') score-=0.5;
-      candidates.push({...h,qty,total:carbs,score});
+    for(let qty=h.step;qty<=4+1e-9;qty+=h.step){
+      const total=h.carbs*qty;
+      let score=Math.abs(total-target);
+      if(preferFast&&h.speed!=='fast') score+=4;
+      if(!preferFast&&h.speed==='sustained') score-=0.5;
+      candidates.push({...h,qty,total,score});
     }
   });
   candidates.sort((a,b)=>a.score-b.score);
-  const chosen=[], used=new Set();
+  const chosen=[],used=new Set();
   for(const c of candidates){
     if(used.has(c.name)) continue;
     chosen.push(c); used.add(c.name);
@@ -511,7 +689,7 @@ function helperSuggestions(target, preferFast){
   }
   return chosen;
 }
-function renderSuggestions(target, preferFast){
+function renderSuggestions(target,preferFast){
   const list=helperSuggestions(target,preferFast);
   $('helperList').innerHTML=list.map(c=>`
     <div class="helper">
@@ -521,12 +699,13 @@ function renderSuggestions(target, preferFast){
     </div>`).join('');
   $('helperSuggestions').hidden=list.length===0;
 }
+function getReduction(activity){ return activity==='NONE'?0:n(activity.toLowerCase()); }
 function getActivityBuffer(activity,timing,trend){
+  if(activity==='NONE') return 0;
   const base=n('buffer'+activity);
   let multiplier=0;
   if(timing==='current'||timing==='soon') multiplier=1;
   else if(timing==='past') multiplier=0.5;
-  else multiplier=0;
   let value=base*multiplier;
   if(trend==='down') value+=5;
   if(trend==='downfast') value+=10;
@@ -534,18 +713,20 @@ function getActivityBuffer(activity,timing,trend){
 }
 function getInitialShare(level,activity,timing){
   let share=n('split'+level)/100;
-  if((timing==='current'||timing==='soon') && activity==='A1') share-=0.05;
-  if((timing==='current'||timing==='soon'||timing==='past') && activity==='A2') share-=0.05;
-  if((timing==='current'||timing==='soon'||timing==='past') && activity==='A3') share-=0.10;
+  if(activity==='NONE') return Math.max(0.25,Math.min(1,share));
+  if((timing==='current'||timing==='soon')&&activity==='A1') share-=0.05;
+  if((timing==='current'||timing==='soon'||timing==='past')&&activity==='A2') share-=0.05;
+  if((timing==='current'||timing==='soon'||timing==='past')&&activity==='A3') share-=0.10;
   return Math.max(0.25,Math.min(1,share));
 }
+
 function calculate(){
-  const glucose=n('glucose'), target=n('target'), isf=n('isf');
-  const iob=n('iob'), iobEffective=n('iobEffective');
+  const glucose=toMmol(n('glucose')), target=toMmol(n('target')), isf=isfToMmol(n('isf'));
+  const iob=n('iob'), cob=n('cob'), iobEffective=n('iobEffective');
   const carbs=n('carbs'), fat=n('fat'), protein=n('protein');
   const directFpe=$('directFpe').value===''?null:n('directFpe');
   const manualLevel=$('mealLevel').value, levelMode=$('levelMode').value;
-  const activity=$('activity').value, reduction=n(activity.toLowerCase());
+  const activity=$('activity').value, reduction=getReduction(activity);
   const timing=$('timing').value, trend=$('trend').value, manual=n('manualAdjust');
   const carbRatio=n('carbRatio'), fpeRatio=n('fpeRatio'), rounding=n('rounding');
   const carbRounding=n('carbRounding'), hypoMinimum=n('hypoMinimum');
@@ -555,17 +736,20 @@ function calculate(){
   const auto=automaticLevel(fat,protein,carbs);
   const macrosEntered=(fat>0||protein>0);
   const usedLevel=(levelMode==='auto'&&macrosEntered)?auto.level:manualLevel;
+  const hypoThreshold=3.9;
 
   const warnings=[];
   if(iobEffective>iob) warnings.push(['danger','Das noch senkende IOB ist höher als das Gesamt-IOB.']);
-  if(glucose<=3.9) warnings.push(['danger','Wert im Hypobereich: schnelle Kohlenhydrate zuführen und zeitnah erneut kontrollieren.']);
+  if(glucose<=hypoThreshold) warnings.push(['danger',`Wert im Hypobereich (≤ ${formatGlucose(hypoThreshold)} ${unitText()}): schnelle Kohlenhydrate zuführen und zeitnah erneut kontrollieren.`]);
   if(['down','downfast'].includes(trend)) warnings.push(['warn','Fallender Trend: Der Wert kann während der Kohlenhydratwirkung noch weiter sinken.']);
-  if(['A2','A3'].includes(activity)) warnings.push(['warn','Hohe Aktivität kann länger und stärker nachwirken als dieses vereinfachte Modell abbildet.']);
-  if(['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
+  if(activity!=='NONE'&&['A2','A3'].includes(activity)) warnings.push(['warn','Hohe Aktivität kann länger und stärker nachwirken als dieses vereinfachte Modell abbildet.']);
+  if(activity!=='NONE'&&['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
+  if(activity==='NONE') warnings.push(['warn','Es wurde keine Aktivitätsanpassung gewählt: weder Bolusreduktion noch Aktivitätspuffer werden angewendet.']);
   if(levelMode==='auto'&&macrosEntered&&auto.level!==manualLevel)
     warnings.push(['warn',`Makronährstoffe sprechen für ${auto.level}, manuell gewählt war ${manualLevel}. Für die Splitberechnung wird ${auto.level} verwendet.`]);
   if(directFpe!==null&&!macrosEntered)
     warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung unsicher.']);
+  if(cob>0) warnings.push(['warn',`${fmt(cob,0)} g COB sind noch angegeben. COB wird nur angezeigt und nicht automatisch als neuer Mahlzeitenbedarf oder IOB-Gegenwirkung verrechnet.`]);
 
   const baseBolus=carbs/carbRatio;
   const afterActivity=baseBolus*(1-reduction/100);
@@ -588,16 +772,17 @@ function calculate(){
   $('usedLevel').textContent=usedLevel;
   $('suggestedLevel').textContent=macrosEntered?`${auto.level} – ${auto.reason}`:'nicht berechnet';
   $('baseBolus').textContent=fmt(baseBolus)+' IE';
-  $('activityAdj').textContent='−'+fmt(baseBolus-afterActivity)+' IE ('+fmt(reduction,0)+' %)';
+  $('activityAdj').textContent=activity==='NONE'?'keine':`−${fmt(baseBolus-afterActivity)} IE (${fmt(reduction,0)} %)`;
   $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManual-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
   $('correction').textContent=(correction>=0?'+':'')+fmt(correction)+' IE';
   $('iobDeduction').textContent='−'+fmt(effectiveIob)+' IE';
+  $('cobBreakdown').textContent=fmt(cob,0)+' g';
   $('activityBuffer').textContent=fmt(activityBuffer,0)+' g KH';
   $('effectiveRatio').textContent=fmt(effectiveRatio)+' g KH je 1 IE';
   $('fpeValue').textContent=fmt(fpe)+' FPE';
   $('mealHint').textContent=mealHint(usedLevel);
 
-  const hypoOrFalling=glucose<=3.9||['down','downfast'].includes(trend);
+  const hypoOrFalling=glucose<=hypoThreshold||['down','downfast'].includes(trend);
   $('splitPlan').hidden=true;
   $('helperSuggestions').hidden=true;
 
@@ -609,10 +794,7 @@ function calculate(){
 
     $('resultLabel').textContent='Split-Empfehlung';
     $('mainResult').textContent=fmt(initialRounded)+' IE jetzt spritzen';
-    $('secondaryResult').textContent=delayedRounded>0
-      ? `Nicht der gesamte errechnete Bedarf wird sofort gegeben.`
-      : 'Kein regulärer verzögerter KH-Anteil vorgesehen.';
-
+    $('secondaryResult').textContent=delayedRounded>0?'Nicht der gesamte errechnete Bedarf wird sofort gegeben.':'Kein regulärer verzögerter KH-Anteil vorgesehen.';
     $('totalNeed').textContent=fmt(totalRounded)+' IE insgesamt für KH, Korrektur und IOB-Bilanz';
     $('initialDose').textContent=fmt(initialRounded)+' IE';
     $('initialReason').textContent=`Initialanteil ${fmt(initialShare*100,0)} % des aktivitätsbereinigten KH-Bolus; Korrektur/IOB werden sofort verrechnet.`;
@@ -621,7 +803,7 @@ function calculate(){
     $('lateFpeDose').textContent=fpeRounded>0?`bis zu ${fmt(fpeRounded)} IE zusätzlich prüfen`:'0,0 IE';
     $('fpeTiming').textContent=fpeWindow(usedLevel);
     $('splitPlan').hidden=false;
-  } else {
+  }else{
     const deficitCarbs=Math.max(0,Math.abs(Math.min(0,immediateNet))*effectiveRatio);
     let neededCarbs=deficitCarbs+activityBuffer;
     if(hypoOrFalling) neededCarbs=Math.max(neededCarbs,hypoMinimum);
@@ -632,23 +814,200 @@ function calculate(){
       $('mainResult').textContent=fmt(roundedCarbs,0)+' g KH essen';
       $('secondaryResult').textContent='Kein zusätzlicher Sofortbolus.';
       renderSuggestions(roundedCarbs,hypoOrFalling);
-    } else {
+    }else{
       $('resultLabel').textContent='Netto-Empfehlung';
       $('mainResult').textContent='Kein zusätzlicher Bolus';
       $('secondaryResult').textContent='Aktuell ergibt sich weder eine Insulin- noch eine zusätzliche KH-Empfehlung.';
     }
   }
-
   $('warnings').innerHTML=warningsHtml(warnings);
   $('resultCard').hidden=false;
   $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
 function resetInputs(){
-  ['carbs','fat','protein','iob','iobEffective','manualAdjust'].forEach(id=>$(id).value=0);
-  $('directFpe').value=''; $('mealName').value=''; $('glucose').value=6; $('target').value=6;
+  ['carbs','fat','protein','iob','cob','iobEffective','manualAdjust'].forEach(id=>$(id).value=0);
+  $('directFpe').value=''; $('mealName').value='';
+  $('glucose').value=currentUnit==='mgdl'?'108':'6.0';
+  $('target').value=currentUnit==='mgdl'?'108':'6.0';
+  $('isf').value=currentUnit==='mgdl'?'36':'2.0';
   $('trend').value='stable'; $('activity').value='A1'; $('mealLevel').value='L2';
   $('levelMode').value='auto'; $('timing').value='none'; $('resultCard').hidden=true;
 }
+
+function cleanNightscoutConfig(){
+  let rawUrl=$('nightscoutUrl').value.trim();
+  let token=$('nightscoutToken').value.trim();
+  if(!rawUrl) return {url:'',token};
+  try{
+    if(!/^https?:\/\//i.test(rawUrl)) rawUrl='https://'+rawUrl;
+    const u=new URL(rawUrl);
+    if(!token && u.searchParams.get('token')) token=u.searchParams.get('token');
+    u.search='';
+    u.hash='';
+    rawUrl=u.toString().replace(/\/$/,'');
+    $('nightscoutUrl').value=rawUrl;
+    if(token) $('nightscoutToken').value=token;
+  }catch(err){}
+  return {url:rawUrl.replace(/\/$/,''),token};
+}
+function apiUrl(base,path,token){
+  const sep=path.includes('?')?'&':'?';
+  return base+path+(token?sep+'token='+encodeURIComponent(token):'');
+}
+function setNsStatus(text,type=''){
+  const el=$('nightscoutStatus');
+  el.textContent='Nightscout: '+text;
+  el.className='status-text '+type;
+}
+function mapDirection(direction,slopePerMinute){
+  const d=String(direction||'').toLowerCase();
+  if(['doubleup','singleup'].includes(d)) return d==='doubleup'?'upfast':'up';
+  if(['fortyfiveup'].includes(d)) return 'up';
+  if(['doubledown','singledown'].includes(d)) return d==='doubledown'?'downfast':'down';
+  if(['fortyfivedown'].includes(d)) return 'down';
+  if(Number.isFinite(slopePerMinute)){
+    if(slopePerMinute>=2) return 'upfast';
+    if(slopePerMinute>=0.5) return 'up';
+    if(slopePerMinute<=-2) return 'downfast';
+    if(slopePerMinute<=-0.5) return 'down';
+  }
+  return 'stable';
+}
+function entryTime(entry){
+  const raw=entry.date||entry.mills||entry.dateString||entry.created_at;
+  const d=typeof raw==='number'?new Date(raw):new Date(raw);
+  return Number.isNaN(d.getTime())?null:d;
+}
+function findNumericDeep(obj, targetKeys, maxDepth=8, depth=0){
+  if(obj==null||depth>maxDepth) return null;
+  if(Array.isArray(obj)){
+    for(const item of obj){
+      const v=findNumericDeep(item,targetKeys,maxDepth,depth+1);
+      if(v!=null) return v;
+    }
+    return null;
+  }
+  if(typeof obj!=='object') return null;
+  for(const [k,v] of Object.entries(obj)){
+    if(targetKeys.includes(k.toLowerCase()) && Number.isFinite(Number(v))) return Number(v);
+  }
+  for(const v of Object.values(obj)){
+    const found=findNumericDeep(v,targetKeys,maxDepth,depth+1);
+    if(found!=null) return found;
+  }
+  return null;
+}
+async function fetchJson(url){
+  const response=await fetch(url,{cache:'no-store',headers:{'Accept':'application/json'}});
+  if(!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+async function loadNightscoutData(showAlert=true){
+  if(refreshing) return;
+  const cfg=cleanNightscoutConfig();
+  if(!cfg.url){
+    setNsStatus('nicht eingerichtet – Werte bitte manuell eingeben.','bad');
+    if(showAlert) alert('Bitte zuerst die Nightscout-URL in den Einstellungen eintragen.');
+    return;
+  }
+  refreshing=true;
+  $('loadNightscout').disabled=true;
+  setNsStatus('Daten werden geladen …');
+  try{
+    const entriesUrl=apiUrl(cfg.url,'/api/v1/entries/sgv.json?count=2',cfg.token);
+    const deviceUrl=apiUrl(cfg.url,'/api/v1/devicestatus.json?count=10',cfg.token);
+    const [entryResult,deviceResult]=await Promise.allSettled([fetchJson(entriesUrl),fetchJson(deviceUrl)]);
+
+    if(entryResult.status!=='fulfilled'||!Array.isArray(entryResult.value)||!entryResult.value.length){
+      throw new Error('Kein aktueller Glukosewert verfügbar');
+    }
+    const entries=entryResult.value;
+    const latest=entries[0];
+    const sgv=Number(latest.sgv??latest.glucose);
+    if(!Number.isFinite(sgv)) throw new Error('Glukosewert nicht lesbar');
+    $('glucose').value=currentUnit==='mgdl'?Math.round(sgv):(sgv/18).toFixed(1);
+
+    let slope=null;
+    if(entries.length>1){
+      const t1=entryTime(entries[0]),t2=entryTime(entries[1]);
+      const g2=Number(entries[1].sgv??entries[1].glucose);
+      if(t1&&t2&&Number.isFinite(g2)){
+        const mins=(t1-t2)/60000;
+        if(mins>0) slope=(sgv-g2)/mins;
+      }
+    }
+    $('trend').value=mapDirection(latest.direction,slope);
+    const t=entryTime(latest);
+    if(t){
+      const mins=Math.max(0,Math.round((Date.now()-t.getTime())/60000));
+      $('glucoseAge').textContent=`Nightscout-Messwert: ${mins} Min. alt`;
+      setNsStatus(`${currentUnit==='mgdl'?Math.round(sgv):(sgv/18).toFixed(1)} ${unitText()}, ${mins} Min. alt`,'good');
+    }else{
+      $('glucoseAge').textContent='aus Nightscout geladen';
+      setNsStatus('Glukosewert geladen','good');
+    }
+
+    let iobFound=null,cobFound=null;
+    if(deviceResult.status==='fulfilled'&&Array.isArray(deviceResult.value)){
+      for(const ds of deviceResult.value){
+        if(iobFound==null) iobFound=findNumericDeep(ds,['iob']);
+        if(cobFound==null) cobFound=findNumericDeep(ds,['cob']);
+        if(iobFound!=null&&cobFound!=null) break;
+      }
+    }
+    if(iobFound!=null){
+      $('iob').value=Math.max(0,iobFound).toFixed(2);
+      $('iobSource').textContent='aus Nightscout devicestatus geladen';
+    }else{
+      $('iobSource').textContent='in Nightscout nicht gefunden – bitte manuell eingeben';
+    }
+    if(cobFound!=null){
+      $('cob').value=Math.max(0,cobFound).toFixed(0);
+      $('cobSource').textContent='aus Nightscout devicestatus geladen; nur Information';
+    }else{
+      $('cobSource').textContent='in Nightscout nicht gefunden – bei Bedarf manuell eingeben';
+    }
+    if(showAlert) alert(`Nightscout-Verbindung erfolgreich.\nGlukose: verfügbar\nIOB: ${iobFound!=null?'verfügbar':'nicht gefunden'}\nCOB: ${cobFound!=null?'verfügbar':'nicht gefunden'}`);
+  }catch(err){
+    setNsStatus('Laden fehlgeschlagen – Werte bitte manuell eingeben.','bad');
+    $('glucoseAge').textContent='';
+    if(showAlert) alert('Nightscout konnte nicht geladen werden: '+err.message);
+  }finally{
+    refreshing=false;
+    $('loadNightscout').disabled=false;
+  }
+}
+
+function setupUpdates(){
+  if(!('serviceWorker' in navigator)) return;
+  window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js');
+      const showUpdate=worker=>{
+        pendingWorker=worker;
+        $('updateBanner').hidden=false;
+      };
+      if(reg.waiting) showUpdate(reg.waiting);
+      reg.addEventListener('updatefound',()=>{
+        const worker=reg.installing;
+        worker?.addEventListener('statechange',()=>{
+          if(worker.state==='installed'&&navigator.serviceWorker.controller) showUpdate(worker);
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        if(!refreshing) location.reload();
+      });
+      reg.update();
+    }catch(err){
+      console.warn('Service Worker konnte nicht registriert werden',err);
+    }
+  });
+}
+$('applyUpdate').addEventListener('click',()=>{
+  if(pendingWorker) pendingWorker.postMessage({type:'SKIP_WAITING'});
+  else location.reload();
+});
 
 $('calculate').addEventListener('click',calculate);
 $('reset').addEventListener('click',resetInputs);
@@ -657,13 +1016,21 @@ $('restoreSettings').addEventListener('click',restoreSettings);
 $('addHelper').addEventListener('click',addHelper);
 $('saveHelpers').addEventListener('click',saveHelpers);
 $('restoreHelpers').addEventListener('click',restoreHelpers);
+$('glucoseUnit').addEventListener('change',e=>setUnit(e.target.value,true));
+$('loadNightscout').addEventListener('click',()=>loadNightscoutData(false));
+$('testNightscout').addEventListener('click',()=>loadNightscoutData(true));
+$('exportData').addEventListener('click',exportData);
+$('importData').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',e=>{
+  if(e.target.files[0]) importDataFile(e.target.files[0]);
+  e.target.value='';
+});
 
 loadSettings();
 loadHelpers();
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-}
+setupUpdates();
+if($('nightscoutAuto').checked) setTimeout(()=>loadNightscoutData(false),250);
+else setNsStatus('automatisches Laden ist ausgeschaltet – Werte bitte manuell eingeben.');
 </script>
 </body>
 </html>
