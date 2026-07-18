@@ -23,11 +23,12 @@
     .brand{display:flex;align-items:center;gap:9px;min-width:0}
     .brand img{width:34px;height:34px;border-radius:8px;flex:0 0 auto}
     .brand h1{font-size:1.12rem;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .version-badge{font-size:.68rem;font-weight:400;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:2px 6px;border-radius:999px;vertical-align:middle;margin-left:5px}
     .menu-button{width:42px;height:38px;padding:0;background:transparent;color:white;font-size:1.55rem;line-height:1}
     .menu-panel{position:fixed;top:55px;right:12px;z-index:40;background:white;color:var(--text);border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,.24);min-width:220px;padding:7px}
     .menu-panel button{background:white;color:var(--text);text-align:left;padding:11px;border-radius:8px}
     .menu-panel button:hover{background:#f3f4f6}
-    .compact-warning{padding:8px 10px;font-size:.72rem;line-height:1.3}
+    .compact-warning{padding:8px 10px;font-size:.82rem;line-height:1.38}
     .info-section{margin-top:14px}
     .info-section:first-child{margin-top:0}
     .info-section h3{margin:0 0 6px}
@@ -48,7 +49,9 @@
     .qr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .qr-actions button{width:auto;flex:1}
     .modal{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
-    .modal-card{background:white;border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+    .modal-card{background:white;border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;position:relative}
+    .modal-close-x{position:sticky;top:-8px;float:right;z-index:5;width:34px;height:34px;padding:0;border-radius:999px;background:#eef2f7;color:#111827;font-size:1.25rem;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+    .modal-card>h2{padding-right:42px}
     .modal-card h2{margin-bottom:8px}
     @media(max-width:620px){
       .grid{grid-template-columns:1fr}
@@ -91,7 +94,17 @@
     .help-card h3{margin:0 0 6px}
     .help-card p{margin:0 0 8px}
     .help-more{margin-top:8px;padding:10px;background:#f8fafc;border-radius:10px}
-    .token-warning{margin-top:8px;padding:8px 10px;font-size:.76rem;line-height:1.35}
+    .token-warning{margin-top:8px;padding:8px 10px;font-size:.78rem;line-height:1.38}
+    .setting-label-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+    .setting-label-row label{margin:0}
+    .info-button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;padding:0;border-radius:50%;font-size:.78rem;font-weight:700;line-height:1;background:#e8eef7;color:#17365f;border:1px solid #b8c8dc}
+    .info-button:hover{background:#dbe7f4}
+    .sick-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .sick-row .inline-check{margin-top:0}
+    .sick-current-box{display:flex;align-items:center;gap:7px;padding:6px 9px;margin:0}
+    .sick-current-box label{margin:0;font-size:.82rem;white-space:nowrap}
+    .sick-current-box input{width:72px;padding:6px 7px}
+    .settings-full-span{grid-column:1/-1}
     [hidden]{display:none !important}
 
     .statusbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
@@ -124,7 +137,7 @@
   <div class="header-inner">
     <div class="brand">
       <img src="icons/icon-192.png" alt="">
-      <h1>Bolusrechner V0.9</h1>
+      <h1>Bolusrechner <span class="version-badge">V0.11</span></h1>
     </div>
     <button id="menuButton" class="menu-button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
   </div>
@@ -182,7 +195,7 @@
         <small id="iobSource" class="field-source"></small>
       </div>
       <div>
-        <label for="cob">COB (g)</label>
+        <label for="cob">Gesamt-COB (g)</label>
         <input id="cob" type="number" min="0" step="1" value="0">
         <small id="cobSource" class="field-source">Nur Information; wird nicht automatisch vom Bolus abgezogen.</small>
       </div>
@@ -237,16 +250,17 @@
   </section>
 
   <section class="card">
-    <h2>Aktivität und Anpassung</h2>
+    <h2>Aktivität und weitere Anpassungen</h2>
     <div class="grid">
       <div>
         <label for="activity">Aktivitätslevel</label>
         <select id="activity">
+          <option value="AM1">A−1 – Sehr ruhiger Tag</option>
+          <option value="A0">A0 – Basisprofil</option>
+          <option value="A1">A1 – Aktiver Tag</option>
+          <option value="A2">A2 – Deutlich aktiver Tag</option>
+          <option value="A3">A3 – Außergewöhnlich aktiver Tag</option>
           <option value="NONE">Keine Aktivitätsanpassung</option>
-          <option value="A0">A0 – Basisprofil ohne Reduktion</option>
-          <option value="A1" selected>A1 – normaler Alltag mit langem Gassi</option>
-          <option value="A2">A2 – deutlich aktiver Tag</option>
-          <option value="A3">A3 – außergewöhnlich hohe Aktivität</option>
         </select>
       </div>
       <div>
@@ -264,6 +278,22 @@
         <input id="manualAdjust" type="number" min="-50" max="50" step="5" value="0">
         <small>Minus = weniger Insulinbedarf, Plus = mehr Insulinbedarf.</small>
       </div>
+    </div>
+  
+    <div class="sick-row">
+      <div class="inline-check">
+        <input id="sickMode" type="checkbox">
+        <label for="sickMode" style="margin:0">Krank / Infekt</label>
+        <button id="ketoneInfoButton" class="info-button" type="button" aria-label="Ketone: Grenzwerte anzeigen" title="Ketone: Grenzwerte anzeigen">i</button>
+      </div>
+      <div id="sickIncreaseInfo" class="notice ok sick-current-box" hidden>
+        <label for="sickCurrentIncrease">Insulinbedarf +</label>
+        <input id="sickCurrentIncrease" type="number" min="0" max="100" step="5" value="10">
+        <span>%</span>
+      </div>
+    </div>
+    <div id="sickNotice" class="notice warn compact-warning" hidden>
+      Krankheit und Infekte können den Insulinbedarf erhöhen. Der Zuschlag ist nur eine vorsichtige Orientierung. Bei Magen-Darm-Beschwerden, geringer Nahrungsaufnahme oder fallenden Werten kann der Bedarf auch niedriger sein. Glukose, IOB, Nahrungsaufnahme und Ketone engmaschig prüfen. Basalinsulin nicht eigenmächtig absetzen.
     </div>
   </section>
 
@@ -349,6 +379,7 @@
         <div>
           <label for="newSpeed">Wirkung</label>
           <select id="newSpeed">
+            <option value="veryfast">sehr schnell</option>
             <option value="fast">schnell</option>
             <option value="medium">mittel</option>
             <option value="sustained">nachhaltiger</option>
@@ -367,11 +398,11 @@
     <details id="settingsDetails">
       <summary>Einstellungen</summary>
 
-      <div class="settings-group">
+      <div class="settings-group" id="nightscoutSettingsGroup">
         <h3>Nightscout</h3>
         <div class="grid">
           <div>
-            <label for="nightscoutUrl">Nightscout-URL</label>
+            <div class="setting-label-row"><label for="nightscoutUrl">Nightscout-URL</label><button type="button" class="info-button" data-setting-info="nightscoutUrl">i</button></div>
             <input id="nightscoutUrl" type="url" placeholder="https://beispiel.azurewebsites.net">
           </div>
           <div>
@@ -384,11 +415,12 @@
           </div>
           <div class="inline-check">
             <input id="nightscoutAuto" type="checkbox" checked>
-            <label for="nightscoutAuto" style="margin:0">Nightscout-Daten beim Start automatisch laden</label>
+            <label for="nightscoutAuto" style="margin:0">Nightscout-Daten beim Start automatisch laden</label><button type="button" class="info-button" data-setting-info="nightscoutAuto">i</button>
           </div>
         </div>
         <div class="row" style="margin-top:12px">
           <button class="secondary" id="testNightscout">Nightscout-Verbindung testen</button>
+          <button class="primary" id="saveNightscout">Speichern</button>
         </div>
         <p class="hint">URL und Token werden nur lokal in diesem Browser gespeichert.</p>
         <div id="nightscoutProfileInfo" class="notice ok" hidden></div>
@@ -398,20 +430,26 @@
         <h3>Aktuelle Situation</h3>
         <div class="grid">
           <div>
-            <label for="glucoseUnit">Glukoseeinheit</label>
+            <div class="setting-label-row"><label for="glucoseUnit">Glukoseeinheit</label><button type="button" class="info-button" data-setting-info="glucoseUnit">i</button></div>
             <select id="glucoseUnit">
               <option value="mmol">mmol/l</option>
               <option value="mgdl">mg/dl</option>
             </select>
           </div>
           <div>
-            <label for="defaultTarget">Standard-Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
+            <div class="setting-label-row"><label for="defaultTarget">Standard-Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label><button type="button" class="info-button" data-setting-info="defaultTarget">i</button></div>
             <input id="defaultTarget" type="number" min="0" step="0.1" value="6.0">
-            <small>Wird beim Start automatisch in „Aktuelle Situation“ eingesetzt.</small>
           </div>
-          <div><label for="carbRatio">Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
           <div>
-            <label for="rounding">Insulin-Dosisschritt (IE)</label>
+            <div class="setting-label-row"><label for="defaultIsf">Standard-Korrekturfaktor (<span class="isfUnitLabel">mmol/l je IE</span>)</label><button type="button" class="info-button" data-setting-info="defaultIsf">i</button></div>
+            <input id="defaultIsf" type="number" min="0.1" step="0.1" value="2.0">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="carbRatio">Standard-KH-Faktor (g pro IE)</label><button type="button" class="info-button" data-setting-info="carbRatio">i</button></div>
+            <input id="carbRatio" type="number" min="1" step="0.5" value="10">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="rounding">Insulin-Dosisschritt (IE)</label><button type="button" class="info-button" data-setting-info="rounding">i</button></div>
             <select id="rounding">
               <option value="0.5" selected>0,5 IE</option>
               <option value="1">1,0 IE</option>
@@ -419,44 +457,108 @@
             </select>
           </div>
           <div>
-            <label for="carbRounding">KH-Rundung (g)</label>
+            <div class="setting-label-row"><label for="carbRounding">KH-Rundung (g)</label><button type="button" class="info-button" data-setting-info="carbRounding">i</button></div>
             <select id="carbRounding">
               <option value="1">1 g</option>
               <option value="5" selected>5 g</option>
               <option value="10">10 g</option>
             </select>
           </div>
-          <div><label for="hypoMinimum">Mindestmenge bei niedrigem oder fallendem Wert (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
+          <div>
+            <div class="setting-label-row"><label for="hypoMinimum">Mindestmenge Ausgleichs-KH (g)</label><button type="button" class="info-button" data-setting-info="hypoMinimum">i</button></div>
+            <input id="hypoMinimum" type="number" min="0" step="1" value="15">
+          </div>
         </div>
       </div>
 
       <div class="settings-group">
         <h3>Mahlzeit</h3>
         <div class="grid">
-          <div><label for="fpeRatio">FPE pro 1 IE</label><input id="fpeRatio" type="number" min="0.1" step="0.1" value="3"></div>
-          <div><label for="splitL1">L1 initial (%)</label><input id="splitL1" type="number" min="0" max="100" step="5" value="100"></div>
-          <div><label for="splitL2">L2 initial (%)</label><input id="splitL2" type="number" min="0" max="100" step="5" value="80"></div>
-          <div><label for="splitL3">L3 initial (%)</label><input id="splitL3" type="number" min="0" max="100" step="5" value="65"></div>
-          <div><label for="splitL4">L4 initial (%)</label><input id="splitL4" type="number" min="0" max="100" step="5" value="50"></div>
+          <div>
+            <div class="setting-label-row"><label for="fpeRatio">FPE pro 1 IE</label><button type="button" class="info-button" data-setting-info="fpeRatio">i</button></div>
+            <input id="fpeRatio" type="number" min="0.1" step="0.1" value="1">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="splitL1">Mahlzeitenlevel L1 – Initialbolus (%)</label><button type="button" class="info-button" data-setting-info="splitL1">i</button></div>
+            <input id="splitL1" type="number" min="0" max="100" step="5" value="100">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="splitL2">Mahlzeitenlevel L2 – Initialbolus (%)</label><button type="button" class="info-button" data-setting-info="splitL2">i</button></div>
+            <input id="splitL2" type="number" min="0" max="100" step="5" value="80">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="splitL3">Mahlzeitenlevel L3 – Initialbolus (%)</label><button type="button" class="info-button" data-setting-info="splitL3">i</button></div>
+            <input id="splitL3" type="number" min="0" max="100" step="5" value="65">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="splitL4">Mahlzeitenlevel L4 – Initialbolus (%)</label><button type="button" class="info-button" data-setting-info="splitL4">i</button></div>
+            <input id="splitL4" type="number" min="0" max="100" step="5" value="50">
+          </div>
         </div>
       </div>
 
       <div class="settings-group">
-        <h3>Aktivität und Anpassung</h3>
+        <h3>Aktivität und weitere Anpassungen</h3>
         <div class="grid">
-          <div><label for="a0">A0 Reduktion (%)</label><input id="a0" type="number" min="0" max="90" step="5" value="0"></div>
-          <div><label for="a1">A1 Reduktion (%)</label><input id="a1" type="number" min="0" max="90" step="5" value="20"></div>
-          <div><label for="a2">A2 Reduktion (%)</label><input id="a2" type="number" min="0" max="90" step="5" value="40"></div>
-          <div><label for="a3">A3 Reduktion (%)</label><input id="a3" type="number" min="0" max="90" step="5" value="55"></div>
-          <div><label for="bufferA0">Aktivitätspuffer A0 (g)</label><input id="bufferA0" type="number" min="0" step="5" value="0"></div>
-          <div><label for="bufferA1">Aktivitätspuffer A1 (g)</label><input id="bufferA1" type="number" min="0" step="5" value="10"></div>
-          <div><label for="bufferA2">Aktivitätspuffer A2 (g)</label><input id="bufferA2" type="number" min="0" step="5" value="20"></div>
-          <div><label for="bufferA3">Aktivitätspuffer A3 (g)</label><input id="bufferA3" type="number" min="0" step="5" value="30"></div>
-          <div class="inline-check full-span">
+          <div class="settings-full-span">
+            <div class="setting-label-row"><label for="defaultActivity">Standard-Aktivitätslevel</label><button type="button" class="info-button" data-setting-info="defaultActivity">i</button></div>
+            <select id="defaultActivity">
+              <option value="AM1">A−1 – Sehr ruhiger Tag</option>
+              <option value="A0" selected>A0 – Basisprofil</option>
+              <option value="A1">A1 – Aktiver Tag</option>
+              <option value="A2">A2 – Deutlich aktiver Tag</option>
+              <option value="A3">A3 – Außergewöhnlich aktiver Tag</option>
+              <option value="NONE">Keine Aktivitätsanpassung</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="am1Increase">A−1 Bolusanpassung (%)</label><button type="button" class="info-button" data-setting-info="am1Increase">i</button></div>
+            <input id="am1Increase" type="number" min="0" max="100" step="5" value="10">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="a0">A0 Bolusanpassung (%)</label><button type="button" class="info-button" data-setting-info="a0">i</button></div>
+            <input id="a0" type="number" min="0" max="90" step="5" value="0">
+            <input id="bufferA0" type="hidden" value="0">
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="a1">A1 Bolusanpassung (%)</label><button type="button" class="info-button" data-setting-info="a1">i</button></div>
+            <input id="a1" type="number" min="0" max="90" step="5" value="20">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="bufferA1">A1 Aktivitätspuffer (g)</label><button type="button" class="info-button" data-setting-info="bufferA1">i</button></div>
+            <input id="bufferA1" type="number" min="0" step="5" value="10">
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="a2">A2 Bolusanpassung (%)</label><button type="button" class="info-button" data-setting-info="a2">i</button></div>
+            <input id="a2" type="number" min="0" max="90" step="5" value="40">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="bufferA2">A2 Aktivitätspuffer (g)</label><button type="button" class="info-button" data-setting-info="bufferA2">i</button></div>
+            <input id="bufferA2" type="number" min="0" step="5" value="20">
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="a3">A3 Bolusanpassung (%)</label><button type="button" class="info-button" data-setting-info="a3">i</button></div>
+            <input id="a3" type="number" min="0" max="90" step="5" value="55">
+          </div>
+          <div>
+            <div class="setting-label-row"><label for="bufferA3">A3 Aktivitätspuffer (g)</label><button type="button" class="info-button" data-setting-info="bufferA3">i</button></div>
+            <input id="bufferA3" type="number" min="0" step="5" value="30">
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="sickIncrease">Krank-/Infekt-Zuschlag (%)</label><button type="button" class="info-button" data-setting-info="sickIncrease">i</button></div>
+            <input id="sickIncrease" type="number" min="0" max="100" step="5" value="10">
+          </div>
+
+          <div class="inline-check settings-full-span">
             <input id="showManualAdjust" type="checkbox">
             <label for="showManualAdjust" style="margin:0">Zusätzliche manuelle Anpassung anzeigen</label>
+            <button type="button" class="info-button" data-setting-info="showManualAdjust">i</button>
           </div>
-          <small class="full-span">Blendet ein zusätzliches Prozentfeld ein, mit dem der berechnete Insulinbedarf manuell erhöht oder reduziert werden kann.</small>
         </div>
       </div>
 
@@ -492,7 +594,7 @@
           <label for="qrIncludeToken" style="margin:0">Nightscout-Read-only-Token in QR-Code aufnehmen</label>
         </div>
         <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert. Das Token wird nur nach ausdrücklicher Auswahl aufgenommen.</p>
-        <div class="version">Programmversion 0.9</div>
+        <div class="version">Programmversion 0.11</div>
       </div>
     </details>
   </section>
@@ -500,6 +602,7 @@
 
   <div id="appModal" class="modal" hidden>
     <div class="modal-card">
+      <button id="closeAppModalX" class="modal-close-x" aria-label="Schließen" title="Schließen">×</button>
       <h2 id="appModalTitle">Info</h2>
       <div id="appModalContent"></div>
       <div class="qr-actions">
@@ -510,6 +613,7 @@
 
   <div id="qrModal" class="modal" hidden>
     <div class="modal-card">
+      <button id="closeQrModalX" class="modal-close-x" aria-label="Schließen" title="Schließen">×</button>
       <h2 id="qrModalTitle">Einstellungen übertragen</h2>
       <div id="qrContent"></div>
       <div class="qr-actions">
@@ -522,16 +626,16 @@
 </main>
 
 <script>
-const APP_VERSION = '0.9';
+const APP_VERSION = '0.11';
 const $ = id => document.getElementById(id);
 
 const defaults = {
-  glucoseUnit:'mmol', targetMmol:6,
-  carbRatio:10, fpeRatio:3, rounding:0.5, carbRounding:5, hypoMinimum:15,
+  glucoseUnit:'mmol', targetMmol:6, defaultIsfMmol:2,
+  carbRatio:10, fpeRatio:1, rounding:0.5, carbRounding:5, hypoMinimum:15,
   a0:0, a1:20, a2:40, a3:55,
   bufferA0:0, bufferA1:10, bufferA2:20, bufferA3:30,
   splitL1:100, splitL2:80, splitL3:65, splitL4:50,
-  nightscoutUrl:'', nightscoutToken:'', nightscoutAuto:true, showManualAdjust:false
+  nightscoutUrl:'', nightscoutToken:'', nightscoutAuto:true, showManualAdjust:false, am1Increase:10, defaultActivity:'A0', sickIncrease:10
 };
 const numericSettingIds = [
   'carbRatio','fpeRatio','rounding','carbRounding','hypoMinimum',
@@ -545,7 +649,7 @@ const defaultHelpers = [
   {name:'Fruchtsaft', unit:'150 ml Glas', carbs:13.9, step:0.5, speed:'fast'},
   {name:'Süßer Fruchtsaft', unit:'150 ml Glas', carbs:18.6, step:0.5, speed:'fast'},
   {name:'Toastie', unit:'1 Portion', carbs:31.0, step:0.5, speed:'sustained'},
-  {name:'Apfel, mittel (Schätzwert)', unit:'1 Apfel', carbs:15.0, step:0.5, speed:'medium'}
+  {name:'Apfel groß (200 g)',unit:'Apfel',carbs:29,parts:[1,0.5],speed:'fast'}
 ];
 
 let helpers = [];
@@ -571,6 +675,9 @@ function formatGlucose(mmol){ return fmt(fromMmol(mmol), glucoseDigits()); }
 
 const SAFETY_TEXT = "Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt weder eine individuelle Therapieempfehlung noch die Beratung durch medizinisches Fachpersonal. Prüfe alle Eingaben, Berechnungen und vorgeschlagenen Insulin- oder Kohlenhydratmengen eigenverantwortlich und stimme Änderungen deiner Diabetesbehandlung mit deinem Diabetesteam ab. Spätdosen und Korrekturen dürfen nur unter Berücksichtigung von aktuellem Glukoseverlauf, Trend, IOB, Aktivität und der tatsächlichen Mahlzeitenwirkung beurteilt werden.";
 const VERSION_HISTORY = [
+  ['0.11','Standard-Korrekturfaktor, ausführliche Info-Buttons in den Einstellungen, neu geordnete Aktivitätswerte, FPE-Standard 1 sowie direkt anpassbarer Krank-/Infekt-Zuschlag.'],
+  ['0.10.2','Gezielte Korrektur der Nightscout-Einrichtung und -Speicherung, vollständige Wirkungsauswahl bei bestehenden KH-Helfern sowie sichtbarer Krankheitszuschlag.'],
+  ['0.10','Kompakter QR-Code, feste Schließen-X, erweiterte KH-Helfer, neue Aktivitäts- und Krankheitsoptionen sowie klarere Nightscout-Statusanzeigen.'],
   ['0.9','Anrechenbares IOB/COB, verbesserte mobile Weiter-Navigation, neu gegliederte Einstellungen, erweiterte Hilfe und optionaler Token-Import/Export.'],
   ['0.8.1','Nightscout-Verbindungsaufbau korrigiert: aktueller Glukosewert wird vor allen Zusatzabfragen einzeln geladen.'],
   ['0.8','Nightscout-Verbindung stabilisiert, kompakter Refresh-Button und speicherbarer Standard-Zielwert.'],
@@ -594,6 +701,42 @@ function installSelectOnFocus(){
     el.addEventListener('focus',selectAll);
     el.addEventListener('click',()=>{if(document.activeElement===el) selectAll();});
   });
+}
+
+const SETTING_INFO={
+  nightscoutUrl:{title:'Nightscout-URL',html:`<p>Hier wird die Webadresse der eigenen Nightscout-Instanz eingetragen. Die App verwendet sie ausschließlich zum Lesen der benötigten Glukose-, Profil-, IOB-, COB- und Behandlungsdaten.</p><p>Die Adresse kann mit oder ohne <code>https://</code> eingegeben werden. Für die vollständige Einrichtung wird zusätzlich ein Read-only-Token mit der Rolle <code>readable</code> benötigt.</p>`},
+  nightscoutAuto:{title:'Automatisches Nightscout-Laden',html:`<p>Ist diese Option aktiviert, versucht die App beim Start automatisch aktuelle Nightscout-Daten abzurufen. Ohne Verbindung bleiben die Felder manuell nutzbar.</p><p>Ein manueller Refresh ist weiterhin jederzeit möglich.</p>`},
+  glucoseUnit:{title:'Glukoseeinheit',html:`<p>Wähle zwischen mmol/l und mg/dl. Die App rechnet Glukosewerte, Zielwert und Korrekturfaktor beim Wechsel automatisch um.</p><p>Die Einheit verändert nicht die medizinische Bedeutung oder die interne Rechenlogik, sondern nur Darstellung und Eingabeformat.</p>`},
+  defaultTarget:{title:'Standard-Zielwert',html:`<p>Dieser Wert wird beim Start und nach dem Zurücksetzen als Zielwert eingesetzt. Der Korrekturbedarf ergibt sich aus der Differenz zwischen aktuellem Glukosewert und Zielwert.</p><p>Ein höheres Ziel führt zu vorsichtigeren Korrekturen. Der Zielwert ist nicht dasselbe wie Alarmgrenze oder Zielbereich einer Glukoseauswertung.</p>`},
+  defaultIsf:{title:'Standard-Korrekturfaktor / ISF',html:`<p>Der Korrekturfaktor beschreibt, um wie viele Glukoseeinheiten 1 IE Insulin den Wert rechnerisch senkt. Bei 2,0 mmol/l je IE und einer Differenz von 4 mmol/l ergibt sich beispielsweise ein Korrekturbedarf von 2 IE.</p><p>Der voreingestellte Wert von 2,0 mmol/l beziehungsweise 36 mg/dl je IE ist nur ein editierbarer Ausgangswert. Der tatsächliche Faktor ist individuell und kann je nach Tageszeit, Aktivität, Krankheit und Insulinempfindlichkeit variieren.</p><p>Liefert Nightscout einen gültigen Profilwert, wird dieser in die Hauptmaske übernommen. Ohne Nightscout verwendet die App diesen gespeicherten Standard; das Hauptfeld bleibt manuell überschreibbar.</p>`},
+  carbRatio:{title:'Standard-KH-Faktor',html:`<p>Der KH-Faktor gibt an, wie viele Gramm Kohlenhydrate rechnerisch durch 1 IE Insulin abgedeckt werden. Ein Wert von 10 g pro IE bedeutet beispielsweise 5 IE für 50 g KH vor weiteren Anpassungen.</p><p>Der Faktor ist individuell und kann tageszeitabhängig sein. Ein Nightscout-Profilwert kann den aktuellen Wert in der Hauptmaske ersetzen.</p>`},
+  rounding:{title:'Insulin-Dosisschritt',html:`<p>Der errechnete Insulinwert wird auf den ausgewählten Dosisschritt gerundet. Der Schritt sollte zum verwendeten Pen oder zur Pumpe passen.</p><p>Bei 0,5 IE werden beispielsweise 2,3 IE auf 2,5 IE gerundet. Gröbere Schritte führen zwangsläufig zu größeren Rundungsabweichungen.</p>`},
+  carbRounding:{title:'KH-Rundung',html:`<p>Eine errechnete KH-Empfehlung wird aus Sicherheitsgründen immer auf den nächsten ausgewählten Schritt <strong>aufgerundet</strong>.</p><p>Beispiel: 13 g rechnerischer Bedarf werden bei 1-g-Schritten zu 13 g, bei 5-g-Schritten zu 15 g und bei 10-g-Schritten zu 20 g. Die Einstellung betrifft nur KH-Empfehlungen, nicht eingegebene Mahlzeiten-KH.</p>`},
+  hypoMinimum:{title:'Mindestmenge Ausgleichs-KH',html:`<p>Ist der Glukosewert niedrig oder der Trend fallend, schlägt die App mindestens diese KH-Menge vor – auch wenn die reine Nettorechnung einen kleineren Wert ergibt.</p><p>Beispiel: Rechnerisch wären 5 g nötig, die Mindestmenge steht auf 15 g. Bei niedrigem oder fallendem Wert werden mindestens 15 g vorgeschlagen. Dies ist eine einstellbare Sicherheitsuntergrenze und keine allgemeingültige Hypobehandlung.</p>`},
+  fpeRatio:{title:'FPE pro 1 IE',html:`<p>Eine FPE entspricht 100 kcal aus Fett und Protein. Der eingetragene Wert sagt, wie viele FPE rechnerisch durch 1 IE abgedeckt werden.</p><p>Bei 1 FPE pro IE werden 6 FPE als möglicher späterer Bedarf von bis zu 6 IE ausgewiesen. Dieser Wert wird <strong>nicht</strong> in den Sofortbolus eingerechnet, sondern nur als Spätbedarf zur erneuten Prüfung angezeigt.</p><p>Die klassische Grundannahme liegt bei etwa 1 FPE pro IE; die tatsächliche Reaktion ist jedoch sehr individuell. Menge und Zeitpunkt müssen anhand eigener Verläufe vorsichtig angepasst werden.</p>`},
+  splitL1:{title:'Mahlzeitenlevel L1 – Initialbolus',html:`<p>Der Prozentwert bestimmt, welcher Anteil des aktivitätsbereinigten KH-Bolus zunächst gegeben wird. L1 steht für sehr schnelle, eher fettarme Mahlzeiten; deshalb sind standardmäßig 100 % als Initialanteil vorgesehen.</p><p>Ein späterer FPE-Hinweis bleibt davon getrennt und wird nie automatisch in die Sofortdosis übernommen.</p>`},
+  splitL2:{title:'Mahlzeitenlevel L2 – Initialbolus',html:`<p>L2 steht für normal gemischte Mahlzeiten. Standardmäßig werden 80 % des aktivitätsbereinigten KH-Bolus zunächst vorgeschlagen und der verbleibende Anteil später zur Prüfung ausgewiesen.</p><p>Der kleinere Initialanteil soll vermeiden, dass Insulin der tatsächlichen KH-Wirkung deutlich vorausläuft.</p>`},
+  splitL3:{title:'Mahlzeitenlevel L3 – Initialbolus',html:`<p>L3 steht für deutlich fett- oder proteinreichere und damit häufig verzögerte Mahlzeiten. Standardmäßig werden 65 % des aktivitätsbereinigten KH-Bolus initial vorgeschlagen.</p><p>Der Rest wird nicht automatisch gegeben, sondern später anhand von Glukose, Trend, IOB und tatsächlicher Mahlzeitenwirkung neu beurteilt.</p>`},
+  splitL4:{title:'Mahlzeitenlevel L4 – Initialbolus',html:`<p>L4 steht für stark verzögerte, sehr reichhaltige Mahlzeiten. Standardmäßig werden nur 50 % des aktivitätsbereinigten KH-Bolus zunächst vorgeschlagen.</p><p>Damit soll ein frühes Absinken vermieden werden, wenn Insulin deutlich schneller wirkt als die Mahlzeit. Spätere Anteile müssen vollständig neu geprüft werden.</p>`},
+  defaultActivity:{title:'Standard-Aktivitätslevel',html:`<p>Dieses Level wird beim Start und nach dem Zurücksetzen automatisch in der Hauptmaske ausgewählt. Wähle das Level, das deinem üblichen Alltag am ehesten entspricht.</p><p>A0 bleibt das rechnerische Basisprofil. Der persönliche Standardalltag kann trotzdem A−1, A1, A2 oder A3 sein.</p>`},
+  am1Increase:{title:'A−1 Bolusanpassung',html:`<p>A−1 steht für einen deutlich ruhigeren Tag als das Basisprofil. Der eingetragene Wert erhöht den errechneten Mahlzeitenbolus.</p><p>Bei 10 % werden aus einem rechnerischen Bolus von 5 IE zunächst 5,5 IE. Die Einstellung verändert kein Basalinsulin.</p>`},
+  a0:{title:'A0 Bolusanpassung',html:`<p>A0 ist das rechnerische Basisprofil. Mit 0 % bleibt der Mahlzeitenbolus unverändert.</p><p>Der Wert kann technisch angepasst werden, sollte aber nur verändert werden, wenn das eigene Basisprofil bewusst anders definiert wird. Die Einstellung verändert kein Basalinsulin.</p>`},
+  a1:{title:'A1 Bolusanpassung',html:`<p>Der eingetragene Prozentwert reduziert den errechneten Mahlzeitenbolus für einen aktiven Tag. Bei 20 % werden aus 5 IE zunächst 4 IE.</p><p>Die Einstellung betrifft nur den Bolusrechner und verändert kein Basalinsulin.</p>`},
+  a2:{title:'A2 Bolusanpassung',html:`<p>Der Wert reduziert den Mahlzeitenbolus für einen deutlich aktiveren Tag. Die stärkere Reduktion bildet eine erwartete höhere Insulinempfindlichkeit vereinfacht ab.</p><p>Die Wirkung von Bewegung ist individuell und kann länger anhalten als das Modell.</p>`},
+  a3:{title:'A3 Bolusanpassung',html:`<p>Der Wert reduziert den Mahlzeitenbolus für einen außergewöhnlich aktiven Tag. Diese Stufe ist für deutlich überdurchschnittliche Belastung gedacht.</p><p>Bei ungewöhnlicher Aktivität sind Verlauf, IOB und ausreichende KH-Verfügbarkeit besonders wichtig.</p>`},
+  bufferA1:{title:'A1 Aktivitätspuffer',html:`<p>Der Aktivitätspuffer ist eine zusätzliche KH-Menge für eine erwartete weitere Senkung durch Bewegung. Er wird nur verwendet, wenn die Nettorechnung zu einer KH-Empfehlung führt – nicht zusätzlich zu einem positiven Sofortbolus.</p><p>Bei laufender oder bald beginnender Aktivität zählt der volle Wert, bei bereits absolvierter Aktivität die Hälfte. Bei fallendem Trend kommen zusätzlich 5 g, bei stark fallendem Trend 10 g hinzu. Für erst später geplante oder zeitlich nicht angegebene Aktivität zählt der Basiswert zunächst nicht.</p>`},
+  bufferA2:{title:'A2 Aktivitätspuffer',html:`<p>Der Aktivitätspuffer ergänzt eine KH-Empfehlung um eine Reserve für den erwarteten Bewegungseffekt. Er wird nicht auf eine Insulinempfehlung aufgeschlagen.</p><p>Voller Basiswert bei laufender oder bald beginnender Aktivität, halber Wert nach bereits absolvierter Aktivität. Fallender Trend ergänzt 5 g, stark fallender Trend 10 g.</p>`},
+  bufferA3:{title:'A3 Aktivitätspuffer',html:`<p>Diese zusätzliche KH-Reserve ist für außergewöhnlich aktive Tage vorgesehen. Sie greift nur, wenn die Nettobilanz eine KH-Empfehlung ergibt.</p><p>Der Basiswert wird je nach Aktivitätszeitpunkt vollständig, halb oder zunächst gar nicht berücksichtigt; ein fallender Trend ergänzt weitere 5 beziehungsweise 10 g.</p>`},
+  sickIncrease:{title:'Krank-/Infekt-Zuschlag',html:`<p>Dieser Wert ist der gespeicherte Standardzuschlag für „Krank / Infekt“. Aktiviert wird er erst über die Checkbox in der Hauptmaske.</p><p>Dort kann der aktuell verwendete Prozentsatz situativ geändert werden, ohne diesen Standardwert zu überschreiben. Krankheit kann den Insulinbedarf erhöhen; bei Magen-Darm-Beschwerden oder geringer Nahrungsaufnahme kann der Bedarf zugleich niedriger sein.</p>`},
+  showManualAdjust:{title:'Zusätzliche manuelle Anpassung',html:`<p>Diese Option blendet in der Hauptmaske ein zusätzliches Prozentfeld ein. Damit kann der bereits aktivitätsbereinigte Mahlzeitenbolus situativ erhöht oder reduziert werden.</p><p>Die Anpassung ist eine Expertenfunktion und sollte nicht genutzt werden, um unklare oder falsche Grundfaktoren dauerhaft zu kompensieren.</p>`}
+};
+
+function openSettingInfo(key){
+  const data=SETTING_INFO[key];
+  if(!data) return;
+  $('appModalTitle').textContent=data.title;
+  $('appModalContent').innerHTML=`<div class="help-card">${data.html}</div>`;
+  $('appModal').hidden=false;
 }
 
 const HELP_DETAILS={
@@ -645,11 +788,25 @@ function proposeNetIobCob(){
   }
 }
 
+
+function openKetoneInfo(){
+  $('appModalTitle').textContent='Blutketone – Orientierung';
+  $('appModalContent').innerHTML=`
+    <div class="help-card">
+      <p><strong>Unter 0,6 mmol/l:</strong> normaler beziehungsweise unauffälliger Bereich.</p>
+      <p><strong>0,6–1,5 mmol/l:</strong> leicht erhöht. Ausreichend trinken, nach persönlichem Sick-Day-Plan handeln und nach 1–2 Stunden erneut messen.</p>
+      <p><strong>1,6–3,0 mmol/l:</strong> deutlich erhöht, Risiko einer Ketoazidose. Diabetes-Team beziehungsweise ärztliche Hilfe zeitnah kontaktieren und Sick-Day-Plan befolgen.</p>
+      <p><strong>Über 3,0 mmol/l:</strong> medizinischer Notfallverdacht auf DKA. Sofort Notfallhilfe beziehungsweise Notaufnahme.</p>
+    </div>
+    <div class="notice warn">Bei Übelkeit, Erbrechen, Bauchschmerzen, tiefer/schneller Atmung, starker Müdigkeit oder Verwirrtheit unabhängig vom Wert dringend medizinische Hilfe suchen. Basalinsulin nicht eigenmächtig absetzen.</div>`;
+  $('appModal').hidden=false;
+}
+
 function openAppModal(view){
   const title=$('appModalTitle'),content=$('appModalContent');
   if(view==='info'){
     title.textContent='Info';
-    content.innerHTML=`<div class="info-section"><strong>Bolusrechner · Version ${APP_VERSION}</strong><p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p></div><div class="notice warn compact-warning">${SAFETY_TEXT}</div>`;
+    content.innerHTML=`<div class="info-section"><strong>Bolusrechner · Version ${APP_VERSION}</strong><p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p></div><div class="notice warn" style="font-size:1rem;line-height:1.5">${SAFETY_TEXT}</div>`;
   }else if(view==='help'){
     title.textContent='Hilfe';
     content.innerHTML=`
@@ -676,14 +833,14 @@ function setUnit(newUnit, convertValues=true){
   if(newUnit !== 'mmol' && newUnit !== 'mgdl') return;
   const oldUnit = currentUnit;
   if(convertValues && oldUnit !== newUnit){
-    const ids=['glucose','target','defaultTarget','isf'];
+    const ids=['glucose','target','defaultTarget','isf','defaultIsf'];
     ids.forEach(id=>{
       const el=$(id);
       if(el.value==='') return;
       let val=Number(el.value);
       if(oldUnit==='mmol' && newUnit==='mgdl') val*=18;
       if(oldUnit==='mgdl' && newUnit==='mmol') val/=18;
-      el.value = id==='isf' || newUnit==='mmol' ? val.toFixed(1) : Math.round(val);
+      el.value = (id==='isf'||id==='defaultIsf'||newUnit==='mmol') ? val.toFixed(1) : Math.round(val);
     });
   }
   currentUnit=newUnit;
@@ -693,12 +850,13 @@ function setUnit(newUnit, convertValues=true){
   $('target').step=currentUnit==='mgdl'?'1':'0.1';
   $('defaultTarget').step=currentUnit==='mgdl'?'1':'0.1';
   $('isf').step=currentUnit==='mgdl'?'1':'0.1';
+  $('defaultIsf').step=currentUnit==='mgdl'?'1':'0.1';
 }
 
 function getStoredSettings(){
-  let stored = JSON.parse(localStorage.getItem('bolusSettingsV08') || 'null');
+  let stored = JSON.parse(localStorage.getItem('bolusSettingsV010') || 'null');
   if(!stored){
-    const old = JSON.parse(localStorage.getItem('bolusSettingsV07') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV06') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV05') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV04') || 'null');
+    const old = JSON.parse(localStorage.getItem('bolusSettingsV09') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV08') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV07') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV06') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV05') || 'null') || JSON.parse(localStorage.getItem('bolusSettingsV04') || 'null');
     if(old) stored = {...old};
   }
   return {...defaults, ...(stored || {})};
@@ -710,17 +868,23 @@ function applySettings(s){
   $('nightscoutToken').value=s.nightscoutToken || '';
   $('nightscoutAuto').checked=s.nightscoutAuto !== false;
   $('showManualAdjust').checked=s.showManualAdjust === true;
+  $('am1Increase').value=s.am1Increase ?? 10;
+  $('defaultActivity').value=s.defaultActivity || 'A0';
+  $('sickIncrease').value=s.sickIncrease ?? 10;
   updateManualAdjustVisibility();
   setUnit(s.glucoseUnit || 'mmol', false);
   const targetMmol=Number.isFinite(Number(s.targetMmol))?Number(s.targetMmol):6;
+  const defaultIsfMmol=Number.isFinite(Number(s.defaultIsfMmol))?Number(s.defaultIsfMmol):2;
   $('defaultTarget').value=currentUnit==='mgdl'?String(Math.round(targetMmol*18)):targetMmol.toFixed(1);
+  $('defaultIsf').value=currentUnit==='mgdl'?String(Math.round(defaultIsfMmol*18)):defaultIsfMmol.toFixed(1);
   $('target').value=$('defaultTarget').value;
+  $('isf').value=$('defaultIsf').value;
+  $('isfSource').textContent='App-Standard; manuell änderbar.';
+  $('sickCurrentIncrease').value=s.sickIncrease ?? 10;
   if(currentUnit==='mgdl'){
     $('glucose').value='108';
-    $('isf').value='36';
   }else{
     $('glucose').value='6.0';
-    $('isf').value='2.0';
   }
 }
 function collectSettings(){
@@ -728,43 +892,67 @@ function collectSettings(){
   numericSettingIds.forEach(k=>s[k]=n(k));
   s.glucoseUnit=$('glucoseUnit').value;
   s.targetMmol=currentUnit==='mgdl'?n('defaultTarget')/18:n('defaultTarget');
+  s.defaultIsfMmol=currentUnit==='mgdl'?n('defaultIsf')/18:n('defaultIsf');
   s.nightscoutUrl=$('nightscoutUrl').value.trim();
   s.nightscoutToken=$('nightscoutToken').value.trim();
   s.nightscoutAuto=$('nightscoutAuto').checked;
   s.showManualAdjust=$('showManualAdjust').checked;
+  s.am1Increase=n('am1Increase');
+  s.defaultActivity=$('defaultActivity').value;
+  s.sickIncrease=n('sickIncrease');
   return s;
 }
 function loadSettings(){ applySettings(getStoredSettings()); }
 function saveSettings(){
   const s=collectSettings();
-  localStorage.setItem('bolusSettingsV08', JSON.stringify(s));
+  localStorage.setItem('bolusSettingsV010', JSON.stringify(s));
   alert('Einstellungen lokal gespeichert.');
   if(s.nightscoutAuto) loadNightscoutData(false);
 }
 function restoreSettings(){
-  localStorage.removeItem('bolusSettingsV08');
+  localStorage.removeItem('bolusSettingsV010');
   applySettings(defaults);
 }
+
+function migrateHelpersV010(list){
+  return (list||[]).map(h=>{
+    const x={...h};
+    if(x.name==='Mittlerer Apfel'||x.name==='Apfel mittel'||/^Apfel/i.test(x.name||'')){
+      x.name='Apfel groß (200 g)';
+      x.unit='Apfel';
+      x.carbs=29;
+      x.parts=[1,0.5];
+      x.speed='fast';
+    }
+    if(/Saft|Dextrose|Glukose/i.test(x.name||'')) x.speed='veryfast';
+    if(x.speed==='nachhaltig'||x.speed==='sustainable') x.speed='slow';
+    return x;
+  });
+}
+
 function loadHelpers(){
-  helpers = JSON.parse(localStorage.getItem('bolusHelpersV08') || 'null')
+  const stored = JSON.parse(localStorage.getItem('bolusHelpersV010') || 'null')
+    || JSON.parse(localStorage.getItem('bolusHelpersV09') || 'null')
+    || JSON.parse(localStorage.getItem('bolusHelpersV08') || 'null')
     || JSON.parse(localStorage.getItem('bolusHelpersV07') || 'null')
     || JSON.parse(localStorage.getItem('bolusHelpersV06') || 'null')
     || JSON.parse(localStorage.getItem('bolusHelpersV05') || 'null')
     || JSON.parse(localStorage.getItem('bolusHelpersV04') || 'null')
     || deepClone(defaultHelpers);
+  helpers = migrateHelpersV010(stored);
   renderHelperEditor();
 }
 function saveHelpers(){
   syncHelpersFromEditor();
-  localStorage.setItem('bolusHelpersV08', JSON.stringify(helpers));
+  localStorage.setItem('bolusHelpersV010', JSON.stringify(helpers));
   alert('KH-Helfer lokal gespeichert.');
 }
 function restoreHelpers(){
   helpers=deepClone(defaultHelpers);
-  localStorage.removeItem('bolusHelpersV08');
+  localStorage.removeItem('bolusHelpersV010');
   renderHelperEditor();
 }
-function speedLabel(s){ return s==='fast'?'schnell':s==='medium'?'mittel':'nachhaltiger'; }
+function speedLabel(s){ return s==='veryfast'?'sehr schnell':s==='fast'?'schnell':s==='medium'?'mittel':'nachhaltiger'; }
 
 function renderHelperEditor(){
   const box=$('helperEditor');
@@ -787,6 +975,7 @@ function renderHelperEditor(){
         </div>
         <div><label>Wirkung</label>
           <select data-i="${i}" data-k="speed">
+            <option value="veryfast" ${h.speed==='veryfast'?'selected':''}>sehr schnell</option>
             <option value="fast" ${h.speed==='fast'?'selected':''}>schnell</option>
             <option value="medium" ${h.speed==='medium'?'selected':''}>mittel</option>
             <option value="sustained" ${h.speed==='sustained'?'selected':''}>nachhaltiger</option>
@@ -848,10 +1037,10 @@ function importDataFile(file){
       }else{
         importedSettings.nightscoutToken=currentToken;
       }
-      localStorage.setItem('bolusSettingsV08',JSON.stringify(importedSettings));
+      localStorage.setItem('bolusSettingsV010',JSON.stringify(importedSettings));
       if(Array.isArray(data.helpers)){
         helpers=data.helpers;
-        localStorage.setItem('bolusHelpersV08',JSON.stringify(helpers));
+        localStorage.setItem('bolusHelpersV010',JSON.stringify(helpers));
       }
       applySettings(importedSettings);
       renderHelperEditor();
@@ -973,9 +1162,13 @@ function renderSuggestions(target,preferFast){
     </div>`).join('');
   $('helperSuggestions').hidden=list.length===0;
 }
-function getReduction(activity){ return activity==='NONE'?0:n(activity.toLowerCase()); }
+function getReduction(activity){
+  if(activity==='NONE'||activity==='A0') return 0;
+  if(activity==='AM1') return -n('am1Increase');
+  return n(activity.toLowerCase());
+}
 function getActivityBuffer(activity,timing,trend){
-  if(activity==='NONE') return 0;
+  if(!['A1','A2','A3'].includes(activity)) return 0;
   const base=n('buffer'+activity);
   let multiplier=0;
   if(timing==='current'||timing==='soon') multiplier=1;
@@ -992,6 +1185,12 @@ function getInitialShare(level,activity,timing){
   if((timing==='current'||timing==='soon'||timing==='past')&&activity==='A2') share-=0.05;
   if((timing==='current'||timing==='soon'||timing==='past')&&activity==='A3') share-=0.10;
   return Math.max(0.25,Math.min(1,share));
+}
+
+function updateSickIncreaseInfo(){
+  const info=$('sickIncreaseInfo');
+  if(!info) return;
+  info.hidden=!$('sickMode').checked;
 }
 
 function calculate(){
@@ -1024,7 +1223,9 @@ function calculate(){
 
   const baseBolus=carbs/carbRatio;
   const afterActivity=baseBolus*(1-reduction/100);
-  const afterManual=afterActivity*(1+manual/100);
+  const afterManualAdjustment=afterActivity*(1+manual/100);
+  const sickIncrease=$('sickMode').checked?n('sickCurrentIncrease'):0;
+  const afterManual=afterManualAdjustment*(1+sickIncrease/100);
   const correction=(glucose-target)/isf;
   const effectiveIob=Math.min(iobEffective,iob);
   const combinedFactor=(1-reduction/100)*(1+manual/100);
@@ -1047,7 +1248,7 @@ function calculate(){
   $('usedLevel').textContent=usedLevel;
   $('baseBolus').textContent=fmt(baseBolus)+' IE';
   $('activityAdj').textContent=activity==='NONE'?'keine':`−${fmt(baseBolus-afterActivity)} IE (${fmt(reduction,0)} %)`;
-  $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManual-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
+  $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManualAdjustment-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
   $('correction').textContent=(correction>=0?'+':'')+fmt(correction)+' IE';
   $('iobDeduction').textContent='−'+fmt(effectiveIob)+' IE';
   $('activeCarbsBreakdown').textContent=fmt(activeCarbs,0)+' g (+'+fmt(activeCarbDose)+' IE Bedarf)';
@@ -1105,8 +1306,13 @@ function resetInputs(){
   $('directFpe').value='0.0'; mealLevelManual=false; fpeManual=false; $('mealLevelState').textContent='Automatisch aus Fett und Protein berechnet.';
   $('glucose').value=currentUnit==='mgdl'?'108':'6.0';
   $('target').value=$('defaultTarget').value;
-  $('isf').value=currentUnit==='mgdl'?'36':'2.0';
-  $('trend').value='stable'; $('activity').value='A1'; $('mealLevel').value='L2';
+  $('isf').value=$('defaultIsf').value;
+  $('isfSource').textContent='App-Standard; manuell änderbar.';
+  $('sickMode').checked=false;
+  $('sickCurrentIncrease').value=n('sickIncrease');
+  $('sickNotice').hidden=true;
+  updateSickIncreaseInfo();
+  $('trend').value='stable'; $('activity').value=getStoredSettings().defaultActivity || 'A0'; $('mealLevel').value='L2';
 $('timing').value='none'; $('resultCard').hidden=true;
 }
 
@@ -1359,12 +1565,56 @@ async function fetchJson(url){
   }
   return response.json();
 }
+
+function updateNightscoutActionState(){
+  const cfg=cleanNightscoutConfig();
+  const btn=$('loadNightscout');
+  if(!btn) return;
+  if(!cfg.url || !cfg.token){
+    setNsStatus('Nightscout nicht eingerichtet – Werte manuell eingeben.','bad');
+    btn.textContent='Einrichten';
+    btn.dataset.mode='setup';
+  }else{
+    btn.textContent='⟳ Refresh';
+    btn.dataset.mode='refresh';
+  }
+}
+function openNightscoutSettings(){
+  const details=$('settingsDetails');
+  if(details) details.open=true;
+  const target=$('nightscoutSettingsGroup');
+  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>{
+    const urlField=$('nightscoutUrl');
+    if(urlField) urlField.focus();
+  },350);
+}
+
+function saveNightscoutSettings(showConfirmation=true){
+  const settings=getStoredSettings();
+  settings.nightscoutUrl=$('nightscoutUrl').value.trim();
+  settings.nightscoutToken=$('nightscoutToken').value.trim();
+  settings.nightscoutAuto=$('nightscoutAuto').checked;
+  localStorage.setItem('bolusSettingsV010',JSON.stringify(settings));
+  updateNightscoutActionState();
+  if(showConfirmation) alert('Nightscout-Einstellungen wurden gespeichert.');
+}
+
 async function loadNightscoutData(showAlert=true){
   if(refreshing) return;
   const cfg=cleanNightscoutConfig();
-  if(!cfg.url){
-    setNsStatus('nicht eingerichtet – Werte bitte manuell eingeben.','bad');
-    if(showAlert) alert('Bitte zuerst die Nightscout-URL in den Einstellungen eintragen.');
+  if(!cfg.url || !cfg.token){
+    updateNightscoutActionState();
+    if(showAlert){
+      alert('Nightscout ist noch nicht vollständig eingerichtet. Bitte URL und einen Read-only-Token mit der Rolle readable eintragen.');
+      openNightscoutSettings();
+    }
+    return;
+  }
+  if(navigator.onLine===false){
+    setNsStatus('Offline – Werte manuell eingeben.','bad');
+    $('loadNightscout').textContent='⟳ Refresh';
+    $('loadNightscout').dataset.mode='refresh';
     return;
   }
   refreshing=true;
@@ -1457,7 +1707,7 @@ async function loadNightscoutData(showAlert=true){
     }
     if(cobFound!=null){
       $('cob').value=Math.max(0,cobFound).toFixed(0);
-      $('cobSource').textContent=(mins!=null?`Nightscout, ${dataAgeText(mins)}`:'Nightscout')+' · nur Information';
+      $('cobSource').textContent=(mins!=null?`Nightscout, ${dataAgeText(mins)}`:'Nightscout')+'';
     }else{
       $('cobSource').textContent='Nicht verfügbar – bei Bedarf manuell eingeben.';
     }
@@ -1471,10 +1721,18 @@ async function loadNightscoutData(showAlert=true){
     if(profile?.carbRatio) profileParts.push(`KH-Faktor ${profile.carbRatio} g/IE`);
     if(profileParts.length){
       $('nightscoutProfileInfo').hidden=false;
-      $('nightscoutProfileInfo').textContent=`Nightscout-Profil „${profile.name}“: ${profileParts.join(' · ')}`;
+      const lines=[];
+      lines.push(`<strong>Nightscout-Profil:</strong> ${profile.name}`);
+      if(profile?.sensMmol) lines.push(`<strong>Sensitivitätsfaktor:</strong> ${profile.sensMmol.toFixed(1)} mmol/l je IE`);
+      if(profile?.dia) lines.push(`<strong>Insulinwirkdauer/DIA:</strong> ${profile.dia} Stunden`);
+      if(profile?.carbsHr) lines.push(`<strong>KH-Absorption:</strong> ${profile.carbsHr} g pro Stunde`);
+      if(profile?.carbRatio) lines.push(`<strong>KH-Faktor:</strong> ${profile.carbRatio} g pro IE`);
+      $('nightscoutProfileInfo').innerHTML=lines.join('<br>');
     }else{
       $('nightscoutProfileInfo').hidden=true;
     }
+
+    saveNightscoutSettings(false);
 
     if(showAlert){
       alert(
@@ -1499,31 +1757,97 @@ KH-Absorption: ${profile?.carbsHr?profile.carbsHr+' g/h':'nicht gefunden'}`
 }
 
 
+function compactObjectDiff(current,base){
+  const out={};
+  for(const [k,v] of Object.entries(current||{})){
+    if(JSON.stringify(v)!==JSON.stringify(base?.[k])) out[k]=v;
+  }
+  return out;
+}
+const QR_SETTING_KEYS={
+  glucoseUnit:'u',targetMmol:'t',defaultIsfMmol:'di',carbRatio:'cr',fpeRatio:'fr',rounding:'r',carbRounding:'gr',
+  hypoMinimum:'hm',a0:'a0',a1:'a1',a2:'a2',a3:'a3',am1Increase:'am',
+  bufferA0:'b0',bufferA1:'b1',bufferA2:'b2',bufferA3:'b3',
+  splitL1:'s1',splitL2:'s2',splitL3:'s3',splitL4:'s4',
+  showManualAdjust:'ma',nightscoutUrl:'nu',nightscoutToken:'nt',nightscoutAuto:'na',
+  defaultActivity:'da',sickIncrease:'si'
+};
+function compactSettings(settings){
+  const diff=compactObjectDiff(settings,defaults);
+  const out={};
+  for(const [k,v] of Object.entries(diff)) out[QR_SETTING_KEYS[k]||k]=v;
+  return out;
+}
+function expandSettings(compact){
+  const reverse=Object.fromEntries(Object.entries(QR_SETTING_KEYS).map(([k,v])=>[v,k]));
+  const out={...defaults};
+  for(const [k,v] of Object.entries(compact||{})) out[reverse[k]||k]=v;
+  return out;
+}
+function compactHelpers(list){
+  return (list||[]).map(h=>[h.name,h.unit,h.carbs,h.parts,h.speed]);
+}
+function expandHelpers(list){
+  return (list||[]).map(a=>({name:a[0],unit:a[1],carbs:a[2],parts:a[3],speed:a[4]}));
+}
+function lzwCompress(input){
+  const dict=new Map(),data=[...input],out=[];
+  let phrase=data[0]||'',code=256;
+  for(let i=1;i<data.length;i++){
+    const curr=data[i],combo=phrase+curr;
+    if(dict.has(combo)) phrase=combo;
+    else{out.push(phrase.length>1?dict.get(phrase):phrase.charCodeAt(0));dict.set(combo,code++);phrase=curr;}
+  }
+  if(phrase) out.push(phrase.length>1?dict.get(phrase):phrase.charCodeAt(0));
+  return out.map(n=>String.fromCharCode(n)).join('');
+}
+function lzwDecompress(input){
+  if(!input) return '';
+  const dict=new Map(),data=[...input].map(c=>c.charCodeAt(0));
+  let curr=String.fromCharCode(data[0]),old=curr,out=[curr],code=256;
+  for(let i=1;i<data.length;i++){
+    const n=data[i];
+    const phrase=n<256?String.fromCharCode(n):(dict.get(n)??(old+curr));
+    out.push(phrase);
+    curr=phrase.charAt(0);
+    dict.set(code++,old+curr);
+    old=phrase;
+  }
+  return out.join('');
+}
 function buildTransferPayload(includeToken=false){
   syncHelpersFromEditor();
   const settings=collectSettings();
   if(!includeToken) settings.nightscoutToken='';
-  return {f:'bolusrechner-settings',v:APP_VERSION,s:settings,h:helpers};
+  return {f:'bq2',v:APP_VERSION,s:compactSettings(settings),h:compactHelpers(helpers)};
 }
 function encodeQrPayload(payload){
   const json=JSON.stringify(payload);
-  return 'BOLUSQR1:'+btoa(unescape(encodeURIComponent(json)));
+  const compressed=lzwCompress(json);
+  return 'BQ2:'+btoa(unescape(encodeURIComponent(compressed)));
 }
 function decodeQrPayload(text){
-  if(!text.startsWith('BOLUSQR1:')) throw new Error('Kein Bolusrechner-QR-Code');
-  const json=decodeURIComponent(escape(atob(text.slice(9))));
-  const compact=JSON.parse(json);
-  return {format:compact.f,version:compact.v,settings:compact.s,helpers:compact.h};
+  if(text.startsWith('BQ2:')){
+    const compressed=decodeURIComponent(escape(atob(text.slice(4))));
+    const compact=JSON.parse(lzwDecompress(compressed));
+    return {format:'bolusrechner-settings',version:compact.v,settings:expandSettings(compact.s),helpers:expandHelpers(compact.h)};
+  }
+  if(text.startsWith('BOLUSQR1:')){
+    const json=decodeURIComponent(escape(atob(text.slice(9))));
+    const compact=JSON.parse(json);
+    return {format:compact.f,version:compact.v,settings:compact.s,helpers:compact.h};
+  }
+  throw new Error('Kein Bolusrechner-QR-Code');
 }
 function applyImportedPayload(data){
   if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Format');
   const imported={...defaults,...(data.settings||{})};
   const currentToken=getStoredSettings().nightscoutToken||'';
   if(!imported.nightscoutToken) imported.nightscoutToken=currentToken;
-  localStorage.setItem('bolusSettingsV08',JSON.stringify(imported));
+  localStorage.setItem('bolusSettingsV010',JSON.stringify(imported));
   if(Array.isArray(data.helpers)){
     helpers=data.helpers;
-    localStorage.setItem('bolusHelpersV08',JSON.stringify(helpers));
+    localStorage.setItem('bolusHelpersV010',JSON.stringify(helpers));
   }
   applySettings(imported);
   renderHelperEditor();
@@ -1625,6 +1949,7 @@ $('qrImageFile').addEventListener('change',e=>{
   e.target.value='';
 });
 $('closeQrModal').addEventListener('click',()=>$('qrModal').hidden=true);
+$('closeQrModalX').addEventListener('click',()=>$('qrModal').hidden=true);
 $('qrModal').addEventListener('click',e=>{ if(e.target===$('qrModal')) $('qrModal').hidden=true; });
 
 
@@ -1655,10 +1980,36 @@ document.addEventListener('click',e=>{
   }
 });
 $('closeAppModal').addEventListener('click',()=>$('appModal').hidden=true);
+$('closeAppModalX').addEventListener('click',()=>$('appModal').hidden=true);
 $('appModal').addEventListener('click',e=>{if(e.target===$('appModal')) $('appModal').hidden=true;});
+document.querySelectorAll('[data-setting-info]').forEach(btn=>btn.addEventListener('click',()=>openSettingInfo(btn.dataset.settingInfo)));
 $('showManualAdjust').addEventListener('change',updateManualAdjustVisibility);
 $('jsonIncludeToken').addEventListener('change',()=>{$('jsonTokenWarning').hidden=!$('jsonIncludeToken').checked;});
 ['iob','cob','carbRatio'].forEach(id=>$(id).addEventListener('change',proposeNetIobCob));
+
+
+window.addEventListener('offline',()=>{
+  if(cleanNightscoutConfig().url && cleanNightscoutConfig().token){
+    setNsStatus('Offline – Werte manuell eingeben.','bad');
+    $('loadNightscout').textContent='⟳ Refresh';
+    $('loadNightscout').dataset.mode='refresh';
+  }
+});
+window.addEventListener('online',()=>{
+  updateNightscoutActionState();
+  if(cleanNightscoutConfig().url && cleanNightscoutConfig().token) loadNightscoutData(false);
+});
+$('ketoneInfoButton').addEventListener('click',openKetoneInfo);
+$('sickMode').addEventListener('change',()=>{
+  if($('sickMode').checked && $('sickCurrentIncrease').value===''){
+    $('sickCurrentIncrease').value=n('sickIncrease');
+  }
+  $('sickNotice').hidden=!$('sickMode').checked;
+  updateSickIncreaseInfo();
+});
+$('sickIncrease').addEventListener('input',()=>{
+  if(!$('sickMode').checked) $('sickCurrentIncrease').value=$('sickIncrease').value;
+});
 
 $('calculate').addEventListener('click',calculate);
 $('reset').addEventListener('click',resetInputs);
@@ -1668,8 +2019,16 @@ $('addHelper').addEventListener('click',addHelper);
 $('saveHelpers').addEventListener('click',saveHelpers);
 $('restoreHelpers').addEventListener('click',restoreHelpers);
 $('glucoseUnit').addEventListener('change',e=>setUnit(e.target.value,true));
-$('loadNightscout').addEventListener('click',()=>loadNightscoutData(false));
+$('loadNightscout').addEventListener('click',()=>{
+  const cfg=cleanNightscoutConfig();
+  if(!cfg.url || !cfg.token || $('loadNightscout').dataset.mode==='setup'){
+    openNightscoutSettings();
+  }else{
+    loadNightscoutData(false);
+  }
+});
 $('testNightscout').addEventListener('click',()=>loadNightscoutData(true));
+$('saveNightscout').addEventListener('click',()=>saveNightscoutSettings(true));
 $('exportData').addEventListener('click',exportData);
 $('importData').addEventListener('click',()=>$('importFile').click());
 $('importFile').addEventListener('change',e=>{
@@ -1680,9 +2039,12 @@ $('importFile').addEventListener('change',e=>{
 loadSettings();
 loadHelpers();
 updateMealFromMacros('macro');
+$('activity').value=getStoredSettings().defaultActivity || 'A0';
 updateManualAdjustVisibility();
 installSelectOnFocus();
 installNextFieldNavigation();
+updateNightscoutActionState();
+updateSickIncreaseInfo();
 setupUpdates();
 if($('nightscoutAuto').checked) setTimeout(()=>loadNightscoutData(false),250);
 else setNsStatus('automatisches Laden ist ausgeschaltet – Werte bitte manuell eingeben.');
