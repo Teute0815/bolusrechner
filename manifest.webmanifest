@@ -7,7 +7,7 @@
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#0f172a",
-  "description": "Bolusrechner mit Split, Nightscout, 20-Minuten-Trend, speicherbarem Zielwert und Offline-Nutzung.",
+  "description": "Bolusrechner mit Nightscout, anrechenbarem IOB/COB, erweiterter Hilfe und Offline-Nutzung.",
   "icons": [
     {
       "src": "icons/icon-192.png",

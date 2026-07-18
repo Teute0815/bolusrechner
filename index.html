@@ -85,6 +85,13 @@
     .helper strong{display:block}
     .mini-btn{width:auto;padding:8px 10px}
     .optional-hidden{display:none !important}
+    .settings-group{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+    .settings-group h3{margin:0 0 10px;font-size:1rem}
+    .help-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+    .help-card h3{margin:0 0 6px}
+    .help-card p{margin:0 0 8px}
+    .help-more{margin-top:8px;padding:10px;background:#f8fafc;border-radius:10px}
+    .token-warning{margin-top:8px;padding:8px 10px;font-size:.76rem;line-height:1.35}
     [hidden]{display:none !important}
 
     .statusbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
@@ -117,7 +124,7 @@
   <div class="header-inner">
     <div class="brand">
       <img src="icons/icon-192.png" alt="">
-      <h1>Bolusrechner</h1>
+      <h1>Bolusrechner V0.9</h1>
     </div>
     <button id="menuButton" class="menu-button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
   </div>
@@ -128,6 +135,8 @@
   <button data-menu-view="help">Hilfe</button>
   <button data-menu-view="versions">Versionsverlauf</button>
   <button data-menu-view="contact">Kontakt</button>
+  <button data-menu-view="helpers">Meine KH-Helfer</button>
+  <button data-menu-view="transfer">Import / Export</button>
   <button data-menu-view="settings">Einstellungen</button>
 </div>
 
@@ -177,13 +186,17 @@
         <input id="cob" type="number" min="0" step="1" value="0">
         <small id="cobSource" class="field-source">Nur Information; wird nicht automatisch vom Bolus abgezogen.</small>
       </div>
-      <div class="full-span">
+      <div>
         <label for="iobEffective">Noch senkendes IOB (IE)</label>
         <input id="iobEffective" type="number" min="0" step="0.1" value="0">
       </div>
+      <div>
+        <label for="activeCarbs">Noch wirksame KH (g)</label>
+        <input id="activeCarbs" type="number" min="0" step="1" value="0">
+      </div>
     </div>
-    <div class="notice warn compact-warning">
-      Nur den tatsächlich noch senkenden Anteil eintragen. Reines Korrektur-IOB meist vollständig, laufendes Mahlzeiten-IOB meist nicht vollständig.
+    <div id="netProposalHint" class="notice warn compact-warning">
+      Automatischer Rechenvorschlag aus Nightscout-IOB, Nightscout-COB und KH-Faktor. Bitte prüfen und bei Bedarf an Mahlzeit, Timing, Aktivität und tatsächlichen Verlauf anpassen. Aktuelle Mahlzeiten-KH nicht doppelt eintragen.
     </div>
   </section>
 
@@ -304,6 +317,7 @@
       <div class="line"><span>Manuelle Anpassung</span><span id="manualAdj">–</span></div>
       <div class="line"><span>Korrekturanteil</span><span id="correction">–</span></div>
       <div class="line"><span>Noch senkendes IOB</span><span id="iobDeduction">–</span></div>
+      <div class="line"><span>Noch wirksame KH</span><span id="activeCarbsBreakdown">–</span></div>
       <div class="line"><span>COB (Information)</span><span id="cobBreakdown">–</span></div>
       <div class="line"><span>Aktivitätspuffer</span><span id="activityBuffer">–</span></div>
       <div class="line"><span>Wirksamer KH-Faktor</span><span id="effectiveRatio">–</span></div>
@@ -312,8 +326,8 @@
     </div>
   </section>
 
-  <section class="card">
-    <details>
+  <section class="card" id="helpersSection">
+    <details id="helpersDetails">
       <summary>Meine KH-Helfer</summary>
       <p class="hint">Die App schlägt nur einfache Portionen vor: ganze, halbe oder – wo eingestellt – Drittel.</p>
       <div id="helperEditor"></div>
@@ -353,106 +367,133 @@
     <details id="settingsDetails">
       <summary>Einstellungen</summary>
 
-      <h3>Anzeige</h3>
-      <div class="grid">
-        <div>
-          <label for="glucoseUnit">Glukoseeinheit</label>
-          <select id="glucoseUnit">
-            <option value="mmol">mmol/l</option>
-            <option value="mgdl">mg/dl</option>
-          </select>
+      <div class="settings-group">
+        <h3>Nightscout</h3>
+        <div class="grid">
+          <div>
+            <label for="nightscoutUrl">Nightscout-URL</label>
+            <input id="nightscoutUrl" type="url" placeholder="https://beispiel.azurewebsites.net">
+          </div>
+          <div>
+            <label for="nightscoutToken">Nightscout-Read-only-Token</label>
+            <input id="nightscoutToken" type="password" autocomplete="off" placeholder="readonly-…">
+            <div class="notice warn token-warning">
+              Hier einen Nightscout-Read-only-Token mit der Rolle <strong>readable</strong> eintragen – nicht das API_SECRET oder einen normalen Anmeldecode. Erstellen in Nightscout: Admin Tools → Add New Subject → Rolle readable.
+            </div>
+            <small>Die App liest nur Glukose-, Profil-, IOB-, COB- und Behandlungsdaten. Ein Read-only-Token genügt und verhindert Schreib-, Änderungs- und Löschzugriffe.</small>
+          </div>
+          <div class="inline-check">
+            <input id="nightscoutAuto" type="checkbox" checked>
+            <label for="nightscoutAuto" style="margin:0">Nightscout-Daten beim Start automatisch laden</label>
+          </div>
         </div>
-        <div>
-          <label for="defaultTarget">Standard-Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
-          <input id="defaultTarget" type="number" min="0" step="0.1" value="6.0">
-          <small>Wird beim Start automatisch in „Aktuelle Situation“ eingesetzt.</small>
+        <div class="row" style="margin-top:12px">
+          <button class="secondary" id="testNightscout">Nightscout-Verbindung testen</button>
         </div>
-        <div class="inline-check">
-          <input id="showManualAdjust" type="checkbox">
-          <label for="showManualAdjust" style="margin:0">Manuelle Feinanpassung anzeigen</label>
+        <p class="hint">URL und Token werden nur lokal in diesem Browser gespeichert.</p>
+        <div id="nightscoutProfileInfo" class="notice ok" hidden></div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Aktuelle Situation</h3>
+        <div class="grid">
+          <div>
+            <label for="glucoseUnit">Glukoseeinheit</label>
+            <select id="glucoseUnit">
+              <option value="mmol">mmol/l</option>
+              <option value="mgdl">mg/dl</option>
+            </select>
+          </div>
+          <div>
+            <label for="defaultTarget">Standard-Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
+            <input id="defaultTarget" type="number" min="0" step="0.1" value="6.0">
+            <small>Wird beim Start automatisch in „Aktuelle Situation“ eingesetzt.</small>
+          </div>
+          <div><label for="carbRatio">Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
+          <div>
+            <label for="rounding">Insulin-Dosisschritt (IE)</label>
+            <select id="rounding">
+              <option value="0.5" selected>0,5 IE</option>
+              <option value="1">1,0 IE</option>
+              <option value="0.1">0,1 IE</option>
+            </select>
+          </div>
+          <div>
+            <label for="carbRounding">KH-Rundung (g)</label>
+            <select id="carbRounding">
+              <option value="1">1 g</option>
+              <option value="5" selected>5 g</option>
+              <option value="10">10 g</option>
+            </select>
+          </div>
+          <div><label for="hypoMinimum">Mindestmenge bei niedrigem oder fallendem Wert (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
         </div>
       </div>
 
-      <h3>Nightscout</h3>
-      <div class="grid">
-        <div>
-          <label for="nightscoutUrl">Nightscout-URL</label>
-          <input id="nightscoutUrl" type="url" placeholder="https://beispiel.azurewebsites.net">
-        </div>
-        <div>
-          <label for="nightscoutToken">Read-only-Token</label>
-          <input id="nightscoutToken" type="password" autocomplete="off" placeholder="readonly-…">
-        </div>
-        <div class="inline-check">
-          <input id="nightscoutAuto" type="checkbox" checked>
-          <label for="nightscoutAuto" style="margin:0">Nightscout-Daten beim Start automatisch laden</label>
+      <div class="settings-group">
+        <h3>Mahlzeit</h3>
+        <div class="grid">
+          <div><label for="fpeRatio">FPE pro 1 IE</label><input id="fpeRatio" type="number" min="0.1" step="0.1" value="3"></div>
+          <div><label for="splitL1">L1 initial (%)</label><input id="splitL1" type="number" min="0" max="100" step="5" value="100"></div>
+          <div><label for="splitL2">L2 initial (%)</label><input id="splitL2" type="number" min="0" max="100" step="5" value="80"></div>
+          <div><label for="splitL3">L3 initial (%)</label><input id="splitL3" type="number" min="0" max="100" step="5" value="65"></div>
+          <div><label for="splitL4">L4 initial (%)</label><input id="splitL4" type="number" min="0" max="100" step="5" value="50"></div>
         </div>
       </div>
-      <div class="row" style="margin-top:12px">
-        <button class="secondary" id="testNightscout">Nightscout-Verbindung testen</button>
-      </div>
-      <p class="hint">URL und Token werden nur lokal in diesem Browser gespeichert. Ein Read-only-Token verwenden, niemals das API_SECRET.</p>
-      <div id="nightscoutProfileInfo" class="notice ok" hidden></div>
 
-      <h3>Berechnungsparameter</h3>
-      <div class="grid">
-        <div><label for="carbRatio">Basisfaktor (g KH pro 1 IE)</label><input id="carbRatio" type="number" min="1" step="0.5" value="10"></div>
-        <div><label for="fpeRatio">FPE pro 1 IE</label><input id="fpeRatio" type="number" min="0.1" step="0.1" value="3"></div>
-        <div>
-          <label for="rounding">Insulin-Dosisschritt (IE)</label>
-          <select id="rounding">
-            <option value="0.5" selected>0,5 IE</option>
-            <option value="1">1,0 IE</option>
-            <option value="0.1">0,1 IE</option>
-          </select>
+      <div class="settings-group">
+        <h3>Aktivität und Anpassung</h3>
+        <div class="grid">
+          <div><label for="a0">A0 Reduktion (%)</label><input id="a0" type="number" min="0" max="90" step="5" value="0"></div>
+          <div><label for="a1">A1 Reduktion (%)</label><input id="a1" type="number" min="0" max="90" step="5" value="20"></div>
+          <div><label for="a2">A2 Reduktion (%)</label><input id="a2" type="number" min="0" max="90" step="5" value="40"></div>
+          <div><label for="a3">A3 Reduktion (%)</label><input id="a3" type="number" min="0" max="90" step="5" value="55"></div>
+          <div><label for="bufferA0">Aktivitätspuffer A0 (g)</label><input id="bufferA0" type="number" min="0" step="5" value="0"></div>
+          <div><label for="bufferA1">Aktivitätspuffer A1 (g)</label><input id="bufferA1" type="number" min="0" step="5" value="10"></div>
+          <div><label for="bufferA2">Aktivitätspuffer A2 (g)</label><input id="bufferA2" type="number" min="0" step="5" value="20"></div>
+          <div><label for="bufferA3">Aktivitätspuffer A3 (g)</label><input id="bufferA3" type="number" min="0" step="5" value="30"></div>
+          <div class="inline-check full-span">
+            <input id="showManualAdjust" type="checkbox">
+            <label for="showManualAdjust" style="margin:0">Zusätzliche manuelle Anpassung anzeigen</label>
+          </div>
+          <small class="full-span">Blendet ein zusätzliches Prozentfeld ein, mit dem der berechnete Insulinbedarf manuell erhöht oder reduziert werden kann.</small>
         </div>
-        <div>
-          <label for="carbRounding">KH-Rundung (g)</label>
-          <select id="carbRounding">
-            <option value="1">1 g</option>
-            <option value="5" selected>5 g</option>
-            <option value="10">10 g</option>
-          </select>
+      </div>
+
+      <div class="settings-group">
+        <h3>Allgemein / Sonstiges</h3>
+        <div class="row">
+          <button class="primary" id="saveSettings">Einstellungen speichern</button>
+          <button class="secondary" id="restoreSettings">Standardwerte</button>
         </div>
-        <div><label for="hypoMinimum">Mindestmenge bei niedrigem oder fallendem Wert (g)</label><input id="hypoMinimum" type="number" min="0" step="1" value="15"></div>
-        <div><label for="a0">A0 Reduktion (%)</label><input id="a0" type="number" min="0" max="90" step="5" value="0"></div>
-        <div><label for="a1">A1 Reduktion (%)</label><input id="a1" type="number" min="0" max="90" step="5" value="20"></div>
-        <div><label for="a2">A2 Reduktion (%)</label><input id="a2" type="number" min="0" max="90" step="5" value="40"></div>
-        <div><label for="a3">A3 Reduktion (%)</label><input id="a3" type="number" min="0" max="90" step="5" value="55"></div>
-
-        <div><label for="bufferA0">Aktivitätspuffer A0 (g)</label><input id="bufferA0" type="number" min="0" step="5" value="0"></div>
-        <div><label for="bufferA1">Aktivitätspuffer A1 (g)</label><input id="bufferA1" type="number" min="0" step="5" value="10"></div>
-        <div><label for="bufferA2">Aktivitätspuffer A2 (g)</label><input id="bufferA2" type="number" min="0" step="5" value="20"></div>
-        <div><label for="bufferA3">Aktivitätspuffer A3 (g)</label><input id="bufferA3" type="number" min="0" step="5" value="30"></div>
-
-        <div><label for="splitL1">L1 initial (%)</label><input id="splitL1" type="number" min="0" max="100" step="5" value="100"></div>
-        <div><label for="splitL2">L2 initial (%)</label><input id="splitL2" type="number" min="0" max="100" step="5" value="80"></div>
-        <div><label for="splitL3">L3 initial (%)</label><input id="splitL3" type="number" min="0" max="100" step="5" value="65"></div>
-        <div><label for="splitL4">L4 initial (%)</label><input id="splitL4" type="number" min="0" max="100" step="5" value="50"></div>
       </div>
 
-      <div class="row" style="margin-top:12px">
-        <button class="primary" id="saveSettings">Einstellungen speichern</button>
-        <button class="secondary" id="restoreSettings">Standardwerte</button>
+      <div class="settings-group" id="transferSection">
+        <h3>Sicherung und Übertragung</h3>
+        <div class="row">
+          <button class="secondary" id="exportData">Einstellungen exportieren</button>
+          <button class="secondary" id="importData">Einstellungen importieren</button>
+        </div>
+        <input class="file-input" id="importFile" type="file" accept="application/json,.json">
+        <div class="inline-check" style="margin-top:10px">
+          <input id="jsonIncludeToken" type="checkbox">
+          <label for="jsonIncludeToken" style="margin:0">Nightscout-Read-only-Token in JSON-Export aufnehmen</label>
+        </div>
+        <div id="jsonTokenWarning" class="notice warn token-warning" hidden>
+          Der Token erlaubt keine Änderungen, kann aber den Zugriff auf Glukose-, Profil- und Behandlungsdaten ermöglichen. Exportdatei daher vertraulich behandeln.
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="secondary" id="exportQr">Als QR-Code anzeigen</button>
+          <button class="secondary" id="importQr">QR-Code einlesen</button>
+        </div>
+        <input class="file-input" id="qrImageFile" type="file" accept="image/*" capture="environment">
+        <div class="inline-check" style="margin-top:10px">
+          <input id="qrIncludeToken" type="checkbox">
+          <label for="qrIncludeToken" style="margin:0">Nightscout-Read-only-Token in QR-Code aufnehmen</label>
+        </div>
+        <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert. Das Token wird nur nach ausdrücklicher Auswahl aufgenommen.</p>
+        <div class="version">Programmversion 0.9</div>
       </div>
-
-      <h3>Sicherung und Übertragung</h3>
-      <div class="row">
-        <button class="secondary" id="exportData">Einstellungen exportieren</button>
-        <button class="secondary" id="importData">Einstellungen importieren</button>
-      </div>
-      <input class="file-input" id="importFile" type="file" accept="application/json,.json">
-      <div class="row" style="margin-top:10px">
-        <button class="secondary" id="exportQr">Als QR-Code anzeigen</button>
-        <button class="secondary" id="importQr">QR-Code einlesen</button>
-      </div>
-      <input class="file-input" id="qrImageFile" type="file" accept="image/*" capture="environment">
-      <div class="inline-check" style="margin-top:10px">
-        <input id="qrIncludeToken" type="checkbox">
-        <label for="qrIncludeToken" style="margin:0">Nightscout-Token ausdrücklich in den QR-Code aufnehmen</label>
-      </div>
-      <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert. Das Nightscout-Token wird nur nach ausdrücklicher Auswahl aufgenommen.</p>
-      <div class="version">Programmversion 0.8.1</div>
     </details>
   </section>
 
@@ -481,7 +522,7 @@
 </main>
 
 <script>
-const APP_VERSION = '0.8.1';
+const APP_VERSION = '0.9';
 const $ = id => document.getElementById(id);
 
 const defaults = {
@@ -530,6 +571,7 @@ function formatGlucose(mmol){ return fmt(fromMmol(mmol), glucoseDigits()); }
 
 const SAFETY_TEXT = "Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt weder eine individuelle Therapieempfehlung noch die Beratung durch medizinisches Fachpersonal. Prüfe alle Eingaben, Berechnungen und vorgeschlagenen Insulin- oder Kohlenhydratmengen eigenverantwortlich und stimme Änderungen deiner Diabetesbehandlung mit deinem Diabetesteam ab. Spätdosen und Korrekturen dürfen nur unter Berücksichtigung von aktuellem Glukoseverlauf, Trend, IOB, Aktivität und der tatsächlichen Mahlzeitenwirkung beurteilt werden.";
 const VERSION_HISTORY = [
+  ['0.9','Anrechenbares IOB/COB, verbesserte mobile Weiter-Navigation, neu gegliederte Einstellungen, erweiterte Hilfe und optionaler Token-Import/Export.'],
   ['0.8.1','Nightscout-Verbindungsaufbau korrigiert: aktueller Glukosewert wird vor allen Zusatzabfragen einzeln geladen.'],
   ['0.8','Nightscout-Verbindung stabilisiert, kompakter Refresh-Button und speicherbarer Standard-Zielwert.'],
   ['0.7','Kompakter Header, Burger-Menü, gewichteter 20-Minuten-Trend und mobile Eingabeoptimierungen.'],
@@ -553,6 +595,56 @@ function installSelectOnFocus(){
     el.addEventListener('click',()=>{if(document.activeElement===el) selectAll();});
   });
 }
+
+const HELP_DETAILS={
+  situation:`<p><strong>Grundlogik:</strong> Der Rechner verbindet Mahlzeitenbedarf, Korrekturbedarf, noch wirksames IOB und noch wirksame KH zu einer Nettobilanz. Nightscout-Werte sind Modellwerte und bleiben manuell überschreibbar.</p><p><strong>Einstellbar:</strong> Einheit, Standard-Zielwert, KH-Faktor und Nightscout-Anbindung. Aktuelle Mahlzeiten-KH dürfen nicht zusätzlich als noch wirksame KH doppelt erfasst werden.</p>`,
+  meal:`<p><strong>Grundlogik:</strong> Kohlenhydrate werden über den KH-Faktor in Insulinbedarf umgerechnet. Fett und Protein ergeben FPE und beeinflussen Mahlzeitenlevel und Split-Empfehlung.</p><p><strong>Einstellbar:</strong> FPE-Faktor und Initialanteile L1 bis L4. Das automatisch gesetzte Mahlzeitenlevel kann jederzeit manuell geändert werden.</p>`,
+  activity:`<p><strong>Grundlogik:</strong> Aktivitätslevel reduzieren den rechnerischen Bedarf und können zusätzliche KH-Puffer erzeugen. Zeitpunkt und Trend beeinflussen die Vorsicht der Empfehlung.</p><p><strong>Einstellbar:</strong> Reduktionen und Puffer je Aktivitätslevel. Die zusätzliche manuelle Anpassung ist optional.</p>`,
+  late:`<p><strong>Grundlogik:</strong> Der Rechner trennt Sofortanteil, verzögerten KH-Anteil und möglichen FPE-Anteil. Diese Werte sind eine zeitliche Orientierung, keine automatische Therapieentscheidung.</p><p><strong>Kontrolle:</strong> Vor jeder Spätdosis aktuelle Glukose, Trend, IOB, Aktivität und tatsächliche Mahlzeitenwirkung erneut prüfen.</p>`,
+  helpers:`<p><strong>Grundlogik:</strong> KH-Helfer übersetzen einen KH-Bedarf in vertraute Portionen. Die Liste wird lokal gespeichert.</p><p><strong>Einstellbar:</strong> Name, Portionseinheit, KH-Menge, Teilbarkeit und Wirkgeschwindigkeit. Die Helfer werden gemeinsam mit den Einstellungen exportiert.</p>`,
+  settings:`<p><strong>Struktur:</strong> Nightscout steht oben, danach folgen Aktuelle Situation, Mahlzeit, Aktivität und Anpassung sowie Allgemein/Sonstiges. KH-Helfer und Sicherung/Übertragung bleiben eigene Bereiche.</p><p><strong>Speicherung:</strong> Änderungen werden lokal gespeichert. Standardwerte lassen sich wiederherstellen; JSON und QR übertragen Einstellungen auf andere Geräte.</p>`
+};
+function installHelpButtons(){
+  document.querySelectorAll('[data-help-more]').forEach(btn=>btn.addEventListener('click',()=>{
+    const key=btn.dataset.helpMore;
+    const detail=document.querySelector(`[data-help-detail="${key}"]`);
+    if(!detail) return;
+    const opening=detail.hidden;
+    detail.hidden=!opening;
+    if(opening) detail.innerHTML=HELP_DETAILS[key]||'';
+    btn.textContent=opening?'Weniger Info':'Mehr Info';
+  }));
+}
+function installNextFieldNavigation(){
+  ['trend','mealLevel','activity','timing'].forEach(id=>$(id)?.setAttribute('tabindex','-1'));
+  const selector='input[type="number"],input[type="text"],input[type="url"],input[type="password"]';
+  document.querySelectorAll(selector).forEach(el=>el.setAttribute('enterkeyhint','next'));
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||!e.target.matches(selector)) return;
+    e.preventDefault();
+    const fields=[...document.querySelectorAll(selector)].filter(x=>!x.disabled&&!x.readOnly&&x.offsetParent!==null);
+    const idx=fields.indexOf(e.target);
+    const next=fields[idx+1];
+    if(next) next.focus(); else e.target.blur();
+  });
+}
+function proposeNetIobCob(){
+  const totalIob=n('iob');
+  const totalCob=n('cob');
+  const ratio=Math.max(0.1,n('carbRatio'));
+  const diff=totalIob-(totalCob/ratio);
+  if(diff>0.05){
+    $('iobEffective').value=diff.toFixed(2);
+    $('activeCarbs').value='0';
+  }else if(diff<-0.05){
+    $('iobEffective').value='0';
+    $('activeCarbs').value=Math.max(0,-diff*ratio).toFixed(0);
+  }else{
+    $('iobEffective').value='0';
+    $('activeCarbs').value='0';
+  }
+}
+
 function openAppModal(view){
   const title=$('appModalTitle'),content=$('appModalContent');
   if(view==='info'){
@@ -560,7 +652,14 @@ function openAppModal(view){
     content.innerHTML=`<div class="info-section"><strong>Bolusrechner · Version ${APP_VERSION}</strong><p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p></div><div class="notice warn compact-warning">${SAFETY_TEXT}</div>`;
   }else if(view==='help'){
     title.textContent='Hilfe';
-    content.innerHTML=`<div class="info-section"><h3>Aktuelle Situation</h3><p>Glukose, Zielwert, ISF, Trend und IOB bilden die Ausgangslage.</p></div><div class="info-section"><h3>Mahlzeit</h3><p>KH bestimmen den Basisbolus. Fett und Protein berechnen FPE und Mahlzeitenlevel.</p></div><div class="info-section"><h3>Aktivität</h3><p>Aktivitätsstufe und Zeitpunkt verändern Bolus und gegebenenfalls den KH-Puffer.</p></div><div class="info-section"><h3>Spätdosen</h3><p>Verzögerte KH- und FPE-Anteile immer anhand des aktuellen Verlaufs neu beurteilen.</p></div>`;
+    content.innerHTML=`
+      <div class="help-card"><h3>Aktuelle Situation</h3><p>Hier werden Glukose, Zielwert, Korrekturfaktor, Trend, IOB und COB zusammengeführt. Die Felder „Noch senkendes IOB“ und „Noch wirksame KH“ bilden daraus einen prüfbaren Nettovorschlag.</p><button class="secondary mini-btn" data-help-more="situation">Mehr Info</button><div class="help-more" data-help-detail="situation" hidden></div></div>
+      <div class="help-card"><h3>Mahlzeit</h3><p>Kohlenhydrate bestimmen den Grundbedarf. Fett und Protein berechnen automatisch FPE und Mahlzeitenlevel; das Level kann manuell angepasst werden.</p><button class="secondary mini-btn" data-help-more="meal">Mehr Info</button><div class="help-more" data-help-detail="meal" hidden></div></div>
+      <div class="help-card"><h3>Aktivität</h3><p>Aktivitätsstufe und Zeitpunkt können Insulinbedarf und KH-Puffer verändern. Eine zusätzliche manuelle Anpassung lässt sich optional einblenden.</p><button class="secondary mini-btn" data-help-more="activity">Mehr Info</button><div class="help-more" data-help-detail="activity" hidden></div></div>
+      <div class="help-card"><h3>Spätdosen</h3><p>Verzögerte KH- und FPE-Anteile werden getrennt ausgewiesen. Sie müssen anhand des aktuellen Verlaufs erneut beurteilt werden.</p><button class="secondary mini-btn" data-help-more="late">Mehr Info</button><div class="help-more" data-help-detail="late" hidden></div></div>
+      <div class="help-card"><h3>KH-Helfer</h3><p>KH-Helfer übersetzen benötigte Kohlenhydrate in vertraute Portionen. Eigene Lebensmittel und Portionen können lokal gespeichert werden.</p><button class="secondary mini-btn" data-help-more="helpers">Mehr Info</button><div class="help-more" data-help-detail="helpers" hidden></div></div>
+      <div class="help-card"><h3>Einstellungen</h3><p>Die Einstellungen steuern Nightscout, Zielwerte, Mahlzeitenlevel, Aktivität und Rundung. Sie sind nach denselben Bereichen wie die Hauptmaske gegliedert.</p><button class="secondary mini-btn" data-help-more="settings">Mehr Info</button><div class="help-more" data-help-detail="settings" hidden></div></div>`;
+    installHelpButtons();
   }else if(view==='versions'){
     title.textContent='Versionsverlauf';
     content.innerHTML='<ol class="version-list">'+VERSION_HISTORY.map(v=>`<li><strong>Version ${v[0]}</strong><br>${v[1]}</li>`).join('')+'</ol>';
@@ -720,7 +819,7 @@ function addHelper(){
 function exportData(){
   syncHelpersFromEditor();
   const settings=collectSettings();
-  settings.nightscoutToken='';
+  if(!$('jsonIncludeToken').checked) settings.nightscoutToken='';
   const payload={
     format:'bolusrechner-settings',
     version:APP_VERSION,
@@ -742,7 +841,13 @@ function importDataFile(file){
       const data=JSON.parse(reader.result);
       if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Dateiformat');
       const importedSettings={...defaults,...(data.settings||{})};
-      importedSettings.nightscoutToken=getStoredSettings().nightscoutToken || '';
+      const currentToken=getStoredSettings().nightscoutToken || '';
+      if(importedSettings.nightscoutToken){
+        const takeImported=confirm('Die Importdatei enthält einen Nightscout-Token.\n\nOK = enthaltenen Token übernehmen\nAbbrechen = bereits gespeicherten Token behalten');
+        if(!takeImported) importedSettings.nightscoutToken=currentToken;
+      }else{
+        importedSettings.nightscoutToken=currentToken;
+      }
       localStorage.setItem('bolusSettingsV08',JSON.stringify(importedSettings));
       if(Array.isArray(data.helpers)){
         helpers=data.helpers;
@@ -750,7 +855,7 @@ function importDataFile(file){
       }
       applySettings(importedSettings);
       renderHelperEditor();
-      alert('Einstellungen und KH-Helfer wurden importiert. Das Nightscout-Token wird aus Sicherheitsgründen nicht importiert.');
+      alert('Einstellungen und KH-Helfer wurden importiert.');
     }catch(err){
       alert('Import fehlgeschlagen: '+err.message);
     }
@@ -891,7 +996,7 @@ function getInitialShare(level,activity,timing){
 
 function calculate(){
   const glucose=toMmol(n('glucose')), target=toMmol(n('target')), isf=isfToMmol(n('isf'));
-  const iob=n('iob'), cob=n('cob'), iobEffective=n('iobEffective');
+  const iob=n('iob'), cob=n('cob'), iobEffective=n('iobEffective'), activeCarbs=n('activeCarbs');
   const carbs=n('carbs'), fat=n('fat'), protein=n('protein');
   const directFpe=n('directFpe');
   const manualLevel=$('mealLevel').value;
@@ -915,7 +1020,7 @@ function calculate(){
   if(activity!=='NONE'&&['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
   if(activity==='NONE') warnings.push(['warn','Es wurde keine Aktivitätsanpassung gewählt: weder Bolusreduktion noch Aktivitätspuffer werden angewendet.']);
   if(fpeManual&&fat===0&&protein===0&&directFpe>0) warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung eine grobe Schätzung.']);
-  if(cob>0) warnings.push(['warn',`${fmt(cob,0)} g COB sind noch angegeben. COB wird nur angezeigt und nicht automatisch als neuer Mahlzeitenbedarf oder IOB-Gegenwirkung verrechnet.`]);
+  if(cob>0) warnings.push(['warn',`${fmt(cob,0)} g Gesamt-COB sind angegeben. Für die Rechnung wird nur der manuell prüfbare Wert „Noch wirksame KH“ verwendet.`]);
 
   const baseBolus=carbs/carbRatio;
   const afterActivity=baseBolus*(1-reduction/100);
@@ -929,11 +1034,12 @@ function calculate(){
   const initialShare=getInitialShare(usedLevel,activity,timing);
   const initialCarbDose=afterManual*initialShare;
   const delayedCarbDose=Math.max(0,afterManual-initialCarbDose);
-  const immediateNet=initialCarbDose+correction-effectiveIob;
+  const activeCarbDose=activeCarbs/carbRatio;
+  const immediateNet=initialCarbDose+activeCarbDose+correction-effectiveIob;
 
   const fpe=directFpe;
   const fpeDose=fpe/fpeRatio;
-  const totalNeed=Math.max(0,afterManual+correction-effectiveIob);
+  const totalNeed=Math.max(0,afterManual+activeCarbDose+correction-effectiveIob);
 
   $('trendBasis').textContent=latestNightscoutMeta.calculatedTrend
     ? `${latestNightscoutMeta.calculatedTrend.per5>=0?'+':''}${latestNightscoutMeta.calculatedTrend.per5.toFixed(2)} mmol/l je 5 Min. · gewichtet über 20 Min.`
@@ -944,6 +1050,7 @@ function calculate(){
   $('manualAdj').textContent=(manual>=0?'+':'')+fmt(afterManual-afterActivity)+' IE ('+(manual>=0?'+':'')+fmt(manual,0)+' %)';
   $('correction').textContent=(correction>=0?'+':'')+fmt(correction)+' IE';
   $('iobDeduction').textContent='−'+fmt(effectiveIob)+' IE';
+  $('activeCarbsBreakdown').textContent=fmt(activeCarbs,0)+' g (+'+fmt(activeCarbDose)+' IE Bedarf)';
   $('cobBreakdown').textContent=fmt(cob,0)+' g';
   $('activityBuffer').textContent=fmt(activityBuffer,0)+' g KH';
   $('effectiveRatio').textContent=fmt(effectiveRatio)+' g KH je 1 IE';
@@ -994,7 +1101,7 @@ function calculate(){
 }
 
 function resetInputs(){
-  ['carbs','fat','protein','iob','cob','iobEffective','manualAdjust'].forEach(id=>$(id).value=0);
+  ['carbs','fat','protein','iob','cob','iobEffective','activeCarbs','manualAdjust'].forEach(id=>$(id).value=0);
   $('directFpe').value='0.0'; mealLevelManual=false; fpeManual=false; $('mealLevelState').textContent='Automatisch aus Fett und Protein berechnet.';
   $('glucose').value=currentUnit==='mgdl'?'108':'6.0';
   $('target').value=$('defaultTarget').value;
@@ -1246,7 +1353,10 @@ function dataAgeText(mins){
 
 async function fetchJson(url){
   const response=await fetch(url,{cache:'no-store',headers:{'Accept':'application/json'}});
-  if(!response.ok) throw new Error(`HTTP ${response.status}`);
+  if(!response.ok){
+    if(response.status===401) throw new Error('Zugriff abgelehnt (HTTP 401). Prüfe insbesondere, ob wirklich ein gültiger Nightscout-Read-only-Token mit der Rolle readable verwendet wurde.');
+    throw new Error(`HTTP ${response.status}`);
+  }
   return response.json();
 }
 async function loadNightscoutData(showAlert=true){
@@ -1353,6 +1463,7 @@ async function loadNightscoutData(showAlert=true){
     }
 
     latestNightscoutMeta={profile,iobMethod,cobMethod,mins,trend:mappedTrend,nightscoutTrend,calculatedTrend,trendDisagreement};
+    proposeNetIobCob();
     const profileParts=[];
     if(profile?.sensMmol) profileParts.push(`ISF ${profile.sensMmol.toFixed(1)} mmol/l je IE`);
     if(profile?.dia) profileParts.push(`DIA ${profile.dia} h`);
@@ -1529,6 +1640,12 @@ document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener(
   if(view==='settings'){
     $('settingsDetails').open=true;
     $('settingsSection').scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(view==='helpers'){
+    $('helpersDetails').open=true;
+    $('helpersSection').scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(view==='transfer'){
+    $('settingsDetails').open=true;
+    $('transferSection').scrollIntoView({behavior:'smooth',block:'start'});
   }else openAppModal(view);
 }));
 document.addEventListener('click',e=>{
@@ -1540,6 +1657,8 @@ document.addEventListener('click',e=>{
 $('closeAppModal').addEventListener('click',()=>$('appModal').hidden=true);
 $('appModal').addEventListener('click',e=>{if(e.target===$('appModal')) $('appModal').hidden=true;});
 $('showManualAdjust').addEventListener('change',updateManualAdjustVisibility);
+$('jsonIncludeToken').addEventListener('change',()=>{$('jsonTokenWarning').hidden=!$('jsonIncludeToken').checked;});
+['iob','cob','carbRatio'].forEach(id=>$(id).addEventListener('change',proposeNetIobCob));
 
 $('calculate').addEventListener('click',calculate);
 $('reset').addEventListener('click',resetInputs);
@@ -1563,6 +1682,7 @@ loadHelpers();
 updateMealFromMacros('macro');
 updateManualAdjustVisibility();
 installSelectOnFocus();
+installNextFieldNavigation();
 setupUpdates();
 if($('nightscoutAuto').checked) setTimeout(()=>loadNightscoutData(false),250);
 else setNsStatus('automatisches Laden ist ausgeschaltet – Werte bitte manuell eingeben.');

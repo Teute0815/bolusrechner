@@ -6,6 +6,23 @@ Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt we
 
 ## Versionsverlauf
 
+### Version 0.9
+
+- Mobile Weiter-Navigation überspringt Dropdown-Menüs
+- Noch senkendes IOB und noch wirksame KH stehen nebeneinander
+- Automatischer Rechenvorschlag aus Gesamt-IOB, Gesamt-COB und KH-Faktor
+- Beide Vorschlagswerte bleiben manuell überschreibbar
+- Read-only-Token-Hinweis direkt am Nightscout-Feld
+- Präzisere HTTP-401-Meldung mit Hinweis auf die Rolle readable
+- Nightscout-Token kann optional in den JSON-Export aufgenommen werden
+- Beim JSON-Import kann zwischen enthaltenem und vorhandenem Token gewählt werden
+- Einstellungen neu nach Nightscout, Aktuelle Situation, Mahlzeit, Aktivität und Allgemein gruppiert
+- Burger-Menü um Meine KH-Helfer und Import/Export ergänzt
+- Hilfe um KH-Helfer und Einstellungen erweitert
+- Jeder Hilfebereich besitzt eine ausführliche Mehr-Info-Ansicht
+- Header zeigt die aktuelle Versionsnummer
+
+
 ### Version 0.8.1
 
 - Nightscout-Verbindungsaufbau korrigiert
