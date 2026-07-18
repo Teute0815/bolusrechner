@@ -1,89 +1,89 @@
-# Offline-Bolusrechner
+# Bolusrechner
 
 Lokale, installierbare Web-App zur transparenten Berechnung eines Mahlzeiten- und Korrektursaldos. Die App kann je nach Ergebnis einen Sofortbolus, einen geteilten Bolus, keinen zusätzlichen Bolus oder einen Kohlenhydratausgleich anzeigen.
 
-Die Berechnungen laufen im Browser. Die App ist als persönliche Test- und Dokumentationshilfe gedacht und ersetzt keine individuelle medizinische Therapieentscheidung.
+Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt weder eine individuelle Therapieempfehlung noch die Beratung durch medizinisches Fachpersonal. Prüfe alle Eingaben, Berechnungen und vorgeschlagenen Insulin- oder Kohlenhydratmengen eigenverantwortlich und stimme Änderungen deiner Diabetesbehandlung mit deinem Diabetesteam ab. Spätdosen und Korrekturen dürfen nur unter Berücksichtigung von aktuellem Glukoseverlauf, Trend, IOB, Aktivität und der tatsächlichen Mahlzeitenwirkung beurteilt werden.
 
 ## Versionsverlauf
 
-### Version 0.1
+### Version 0.8.1
 
-- Erste vollständig lokale Rechenversion
-- Eingabe von Glukose, Zielwert, ISF, Kohlenhydraten und IOB
-- Aktivitätsstufen mit editierbaren Reduktionen
-- Mahlzeitenlevel L1 bis L4
-- FPE-Berechnung aus Fett und Protein
-- Transparente Aufschlüsselung der Rechnung
-- Lokale Speicherung der Einstellungen
+- Nightscout-Verbindungsaufbau korrigiert
+- Aktueller Glukosewert wird zuerst allein über den bewährten Zwei-Werte-Endpunkt geladen
+- Profil, IOB, COB und 20-Minuten-Historie werden erst nach erfolgreichem Glukoseabruf geladen
+- Zusatzabfragen können die Grundverbindung nicht mehr blockieren
+- Fehlermeldung zeigt den tatsächlichen Abruffehler genauer an
 
-### Version 0.2
+### Version 0.8
 
-- Ergänzter Kohlenhydrat-Ausgleich
-- Verständlichere Trennung zwischen Gesamt-IOB und dem für die aktuelle Rechnung anrechenbaren Anteil
-- Trend- und Aktivitätshinweise
-- Einstellbare Rundung für Insulin und Kohlenhydrate
+- Nightscout-Abruf für den aktuellen Glukosewert wieder auf den bewährten Zwei-Werte-Endpunkt getrennt
+- 20-Minuten-Historie wird separat geladen und darf bei einem Fehler den aktuellen Wert nicht mehr blockieren
+- Kompakter Refresh-Button
+- Standard-Zielwert in den Einstellungen speicherbar
+- Zielwert wird beim Start und Zurücksetzen automatisch übernommen
 
-### Version 0.3
+### Version 0.7
 
-- Eine gemeinsame Netto-Rechnung ohne Modus-Umschalter
-- Automatische Entscheidung zwischen Insulin, keiner zusätzlichen Maßnahme und Kohlenhydraten
-- Editierbare Datenbank für persönliche KH-Helfer
-- Vorschläge in alltagstauglichen Portionen
-
-### Version 0.4
-
-- Getrennte Darstellung von Gesamtbedarf, Sofortbolus, verzögertem KH-Anteil und möglichem FPE-Anteil
-- Levelabhängige Split-Zeitfenster
-- Automatische Makronährstoff-Einstufung
-- Zusätzlicher Aktivitätspuffer
-- Editierbare Split- und Pufferparameter
-
-### Version 0.5
-
-- Umschaltung zwischen mmol/l und mg/dl
-- Nightscout-Konfiguration mit URL, Read-only-Token und automatischem Laden
-- PWA-Icon in mehreren Größen
-- Sichtbarer Update-Hinweis
-- JSON-Export und -Import von Einstellungen und KH-Helfern
-- Neutrale Aktivitätsoption ohne Anpassung
-- Behutsam optimierte mobile Darstellung
+- Kompakter Header mit App-Icon und Burger-Menü
+- Menübereiche für Info, Hilfe, Versionsverlauf, Kontakt und Einstellungen
+- Einheitlicher Sicherheitshinweis im Infofenster und Footer
+- Eigener gewichteter Trend über 20 Minuten
+- Jüngere Werte und die letzten fünf Minuten werden stärker gewichtet
+- Ausreißerbegrenzung, Mindestanzahl und Richtungsbestätigung
+- Warnung bei deutlicher Abweichung zum Nightscout-Einzeltrend
+- Kompaktere Beschriftungen in „Aktuelle Situation“
+- Eingabewerte werden beim Antippen vollständig markiert
+- Mahlzeit-/Notizfeld vorerst entfernt
+- Manuelle Feinanpassung als optionale Einstellung
+- Versionsverlauf absteigend sortiert
 
 ### Version 0.6
 
-- Nightscout-IOB und -COB werden bevorzugt über `/api/v2/properties` übernommen
-- Fallback über CarePortal-Behandlungen und Profilwerte, wenn direkte Pluginwerte fehlen
-- Aktueller ISF, DIA, KH-Faktor und Kohlenhydrat-Absorptionsrate werden aus dem aktiven Nightscout-Profil gelesen
-- Verbesserter Nightscout-Verbindungstest mit Glukose, Trend, Alter, Profil, IOB und COB
-- Quellenhinweise direkt unter Glukose, Trend, ISF, IOB und COB
-- Kompaktere mobile Anordnung der wichtigsten Eingabefelder
-- Fett, Protein und FPE stehen mobil kompakt nebeneinander
-- FPE wird bei Änderungen von Fett oder Protein sofort neu berechnet
-- Das Mahlzeitenlevel-Dropdown wird automatisch gesetzt und kann manuell überschrieben werden
-- Hinweise unterscheiden zwischen automatischer und manueller Levelauswahl
-- Export und Import von Einstellungen und KH-Helfern per QR-Code
-- Nightscout-Token wird nur nach ausdrücklicher Auswahl in einen QR-Code aufgenommen
+- Erweiterte Nightscout-Profil-, IOB- und COB-Anbindung
+- Fallback über CarePortal-Behandlungen und Profilwerte
+- QR-Export und QR-Import
+- Automatische FPE-Berechnung und Mahlzeitenlevel
+
+### Version 0.5
+
+- Umschaltung mmol/l und mg/dl
+- Nightscout-Konfiguration
+- PWA-Icon und Update-Hinweis
+- JSON-Export und -Import
+- Aktivitätsoption ohne Anpassung
+
+### Version 0.4
+
+- Splitberechnung
+- FPE-Spätanteil
+- Levelabhängige Zeitfenster
+- Aktivitätspuffer
+
+### Version 0.3
+
+- Gemeinsame Netto-Rechnung
+- KH-Helfer-Datenbank
+- Alltagstaugliche Portionsvorschläge
+
+### Version 0.2
+
+- Kohlenhydrat-Ausgleich
+- Differenzierter IOB-Abzug
+- Trend- und Aktivitätshinweise
+
+### Version 0.1
+
+- Erste lokale Rechenversion
+- Grundlegende Eingaben und Rechenaufschlüsselung
+- Lokale Speicherung
 
 ## Nightscout
 
-Die App kann folgende Informationen laden, sofern sie von der jeweiligen Nightscout-Instanz und dem Read-only-Token bereitgestellt werden:
-
-- aktueller Glukosewert und Trend
-- IOB und COB aus Nightscouts Plugin-Eigenschaften
-- Profilwerte wie ISF, DIA, KH-Faktor und Kohlenhydrat-Absorptionsrate
-- CarePortal-Behandlungen als Fallback
-
-Manuelle Eingaben bleiben jederzeit möglich. Der zusätzliche Eingabewert für das tatsächlich noch senkende IOB bleibt bewusst manuell, weil eine App nicht sicher erkennen kann, welcher IOB-Anteil noch zu einer laufenden Mahlzeit gehört.
+Die App kann – abhängig von der jeweiligen Instanz – Glukose, Trend, IOB, COB und Profilwerte laden. Manuelle Eingaben bleiben möglich. Das tatsächlich noch senkende IOB bleibt eine bewusste manuelle Einschätzung.
 
 ## Datenschutz
 
-- Berechnungen und lokale Einstellungen werden im Browser verarbeitet.
-- Zugangstoken gehören nicht in das öffentliche Repository.
-- Der normale JSON- und QR-Export lässt das Nightscout-Token weg.
-- Ein Token kann nur nach ausdrücklicher Auswahl in einen QR-Code aufgenommen werden.
-
-## Installation und Updates
-
-Die App kann über HTTPS als PWA installiert werden. Nach dem ersten Laden ist die Kernfunktion offline verfügbar. Bei einer neuen Programmversion erscheint ein sichtbarer Aktualisierungshinweis.
+Berechnungen und Einstellungen werden im Browser verarbeitet. Zugangstoken gehören nicht in ein öffentliches Repository. Normale Exporte enthalten das Nightscout-Token nicht.
 
 ## Technischer Inhalt
 

@@ -1,5 +1,5 @@
 {
-  "name": "Offline-Bolusrechner",
+  "name": "Bolusrechner",
   "short_name": "Bolusrechner",
   "id": "./",
   "start_url": "./index.html",
@@ -7,7 +7,7 @@
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#0f172a",
-  "description": "Lokaler Bolusrechner mit Split, Aktivitätspuffer, Nightscout, QR-Übertragung und Offline-Nutzung.",
+  "description": "Bolusrechner mit Split, Nightscout, 20-Minuten-Trend, speicherbarem Zielwert und Offline-Nutzung.",
   "icons": [
     {
       "src": "icons/icon-192.png",
