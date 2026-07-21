@@ -1,4 +1,4 @@
-const CACHE='bolusrechner-v0.11';
+const CACHE='bolusrechner-v0.14.2';
 const ASSETS=[
   './','./index.html','./manifest.webmanifest',
   './icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'

@@ -8,8 +8,6 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
   <style>
     :root{
       --bg:#f3f4f6; --card:#ffffff; --text:#111827; --muted:#6b7280;
@@ -39,15 +37,16 @@
     h2{font-size:1rem;margin:0 0 12px}
     h3{font-size:.9rem;margin:14px 0 8px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .situation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .situation-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+    .situation-grid>div{grid-column:span 3}
+    .situation-grid>.situation-top{grid-column:span 2}
+    .situation-grid>.situation-factor{grid-column:span 3}
     .macro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .full-span{grid-column:1/-1}
     .field-source{min-height:1.05em;display:block;margin-top:4px}
     .level-state{display:block;margin-top:5px;color:var(--muted);font-size:.78rem}
-    .qr-panel{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;text-align:center}
-    .qr-panel img,.qr-panel canvas{max-width:100%;height:auto;image-rendering:pixelated}
-    .qr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .qr-actions button{width:auto;flex:1}
+    .modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .modal-actions button{width:auto;flex:1}
     .modal{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
     .modal-card{background:white;border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto;position:relative}
     .modal-close-x{position:sticky;top:-8px;float:right;z-index:5;width:34px;height:34px;padding:0;border-radius:999px;background:#eef2f7;color:#111827;font-size:1.25rem;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.12)}
@@ -56,6 +55,7 @@
     @media(max-width:620px){
       .grid{grid-template-columns:1fr}
       .situation-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .situation-grid>div,.situation-grid>.situation-top,.situation-grid>.situation-factor{grid-column:span 1}
       .macro-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
       .situation-grid input,.situation-grid select,.macro-grid input{padding:9px 7px}
       .situation-grid label,.macro-grid label{font-size:.76rem}
@@ -105,7 +105,31 @@
     .sick-current-box label{margin:0;font-size:.82rem;white-space:nowrap}
     .sick-current-box input{width:72px;padding:6px 7px}
     .settings-full-span{grid-column:1/-1}
+    .proposal-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .proposal-state{font-weight:700}
+    .install-platform{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+    .install-platform:first-child{border-top:0;padding-top:0;margin-top:0}
+    .install-benefits{margin:8px 0 0;padding-left:20px}
     [hidden]{display:none !important}
+    .dirty-bar{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:45;max-width:720px;width:calc(100% - 24px);background:#fff7ed;border:1px solid #fdba74;border-radius:14px;padding:10px 12px;box-shadow:0 8px 26px rgba(15,23,42,.22);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .dirty-bar strong{flex:1;min-width:180px;color:#9a3412}
+    .dirty-bar button{width:auto;padding:9px 12px}
+    .dirty-dismiss{border-radius:999px!important;width:34px!important;height:34px;padding:0!important}
+    .section-title-row{display:flex;align-items:center;gap:7px}
+    .result-info{width:20px;height:20px;min-width:20px;padding:0;border-radius:50%;font-size:.72rem;background:#e8eef7;color:#17365f;border:1px solid #b8c8dc;vertical-align:middle}
+    .setup-progress{font-size:.78rem;color:var(--muted);margin-bottom:8px}
+    .setup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .setup-actions button{width:auto;flex:1}
+    .compare-row{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
+    .compare-value{background:#f8fafc;border-radius:8px;padding:8px}
+    .schedule-editor{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:#f8fafc}
+    .schedule-editor h4{margin:0 0 8px}
+    .schedule-row{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:end;margin-top:8px}
+    .schedule-row button{width:auto;padding:9px 11px}
+    .schedule-add{width:auto;margin-top:10px}
+    .setup-label-row{display:flex;align-items:center;gap:6px;margin-top:10px}
+    .setup-label-row label{margin:0}
 
     .statusbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
     .status-text{font-size:.82rem;color:var(--muted)}
@@ -127,7 +151,7 @@
       .line span:first-child{max-width:58%}
       .result{font-size:1.6rem}
       .row{flex-direction:column}
-      .qr-actions{flex-direction:column}
+      .modal-actions{flex-direction:column}
       .update-banner{top:55px}
     }
   </style>
@@ -137,7 +161,7 @@
   <div class="header-inner">
     <div class="brand">
       <img src="icons/icon-192.png" alt="">
-      <h1>Bolusrechner <span class="version-badge">V0.11</span></h1>
+      <h1>Bolusrechner <span class="version-badge">V0.14.1</span></h1>
     </div>
     <button id="menuButton" class="menu-button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
   </div>
@@ -148,9 +172,11 @@
   <button data-menu-view="help">Hilfe</button>
   <button data-menu-view="versions">Versionsverlauf</button>
   <button data-menu-view="contact">Kontakt</button>
+  <button id="installPwaMenuItem" data-menu-view="install" hidden>Als App / PWA installieren</button>
   <button data-menu-view="helpers">Meine KH-Helfer</button>
   <button data-menu-view="transfer">Import / Export</button>
   <button data-menu-view="settings">Einstellungen</button>
+  <button id="rerunSetupMenuItem">Einrichtung erneut durchführen</button>
 </div>
 
 <main>
@@ -164,21 +190,16 @@
       <button id="loadNightscout" class="secondary compact-btn" aria-label="Nightscout-Daten neu laden" title="Nightscout-Daten neu laden">⟳ Refresh</button>
     </div>
     <div class="situation-grid">
-      <div>
+      <div class="situation-top">
         <label for="glucose">Glukose aktuell (<span class="glucoseUnitLabel">mmol/l</span>)</label>
         <input id="glucose" type="number" min="0" step="0.1" value="6.0">
         <small id="glucoseAge" class="field-source"></small>
       </div>
-      <div>
+      <div class="situation-top">
         <label for="target">Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label>
         <input id="target" type="number" min="0" step="0.1" value="6.0">
       </div>
-      <div>
-        <label for="isf">Korrekturfaktor / ISF (je IE)</label>
-        <input id="isf" type="number" min="0.1" step="0.1" value="2.0">
-        <small id="isfSource" class="field-source">Manuell eingegeben.</small>
-      </div>
-      <div>
+      <div class="situation-top">
         <label for="trend">Trend (20 Min.)</label>
         <select id="trend">
           <option value="stable">stabil</option>
@@ -188,6 +209,16 @@
           <option value="downfast">stark fallend</option>
         </select>
         <small id="trendSource" class="field-source"></small>
+      </div>
+      <div class="situation-factor">
+        <label for="carbRatioCurrent">KH-Faktor (g pro IE)</label>
+        <input id="carbRatioCurrent" type="number" min="1" step="0.5" value="10">
+        <small id="carbRatioSource" class="field-source">App-Standard; manuell änderbar.</small>
+      </div>
+      <div class="situation-factor">
+        <label for="isf">Korrekturfaktor / ISF (je IE)</label>
+        <input id="isf" type="number" min="0.1" step="0.1" value="2.0">
+        <small id="isfSource" class="field-source">App-Standard; manuell änderbar.</small>
       </div>
       <div>
         <label for="iob">Gesamt-IOB (IE)</label>
@@ -209,7 +240,11 @@
       </div>
     </div>
     <div id="netProposalHint" class="notice warn compact-warning">
-      Automatischer Rechenvorschlag aus Nightscout-IOB, Nightscout-COB und KH-Faktor. Bitte prüfen und bei Bedarf an Mahlzeit, Timing, Aktivität und tatsächlichen Verlauf anpassen. Aktuelle Mahlzeiten-KH nicht doppelt eintragen.
+      <div>Automatischer Rechenvorschlag aus Nightscout-IOB, Nightscout-COB und KH-Faktor. Bitte prüfen und bei Bedarf an Mahlzeit, Timing, Aktivität und tatsächlichen Verlauf anpassen. Aktuelle Mahlzeiten-KH nicht doppelt eintragen.</div>
+      <div class="proposal-actions">
+        <span id="proposalState" class="proposal-state">Automatischer Vorschlag</span>
+        <button id="refreshProposal" type="button" class="secondary mini-btn" hidden>Vorschlag aktualisieren</button>
+      </div>
     </div>
   </section>
 
@@ -250,10 +285,10 @@
   </section>
 
   <section class="card">
-    <h2>Aktivität und weitere Anpassungen</h2>
+    <div class="section-title-row"><h2>Aktivität und weitere Anpassungen</h2></div>
     <div class="grid">
       <div>
-        <label for="activity">Aktivitätslevel</label>
+        <div class="setting-label-row"><label for="activity">Aktivitätslevel</label><button id="activitySelectorInfo" class="info-button" type="button" aria-label="Aktivitätslevel erklären">i</button></div>
         <select id="activity">
           <option value="AM1">A−1 – Sehr ruhiger Tag</option>
           <option value="A0">A0 – Basisprofil</option>
@@ -342,16 +377,16 @@
     <div class="breakdown">
       <div class="line"><span>Verwendeter Trend</span><span id="trendBasis">–</span></div>
       <div class="line"><span>Verwendetes Mahlzeitenlevel</span><span id="usedLevel">–</span></div>
-      <div class="line"><span>KH-Bolus A0-Basis</span><span id="baseBolus">–</span></div>
-      <div class="line"><span>Aktivitätsanpassung</span><span id="activityAdj">–</span></div>
-      <div class="line"><span>Manuelle Anpassung</span><span id="manualAdj">–</span></div>
-      <div class="line"><span>Korrekturanteil</span><span id="correction">–</span></div>
-      <div class="line"><span>Noch senkendes IOB</span><span id="iobDeduction">–</span></div>
-      <div class="line"><span>Noch wirksame KH</span><span id="activeCarbsBreakdown">–</span></div>
+      <div class="line"><span>KH-Bolus A0-Basis <button class="result-info" data-result-info="baseBolus" type="button">i</button></span><span id="baseBolus">–</span></div>
+      <div class="line"><span>Aktivitätsanpassung <button class="result-info" data-result-info="activity" type="button">i</button></span><span id="activityAdj">–</span></div>
+      <div class="line"><span>Manuelle Anpassung <button class="result-info" data-result-info="manual" type="button">i</button></span><span id="manualAdj">–</span></div>
+      <div class="line"><span>Korrekturanteil <button class="result-info" data-result-info="correction" type="button">i</button></span><span id="correction">–</span></div>
+      <div class="line"><span>Noch senkendes IOB <button class="result-info" data-result-info="iob" type="button">i</button></span><span id="iobDeduction">–</span></div>
+      <div class="line"><span>Noch wirksame KH <button class="result-info" data-result-info="activeCarbs" type="button">i</button></span><span id="activeCarbsBreakdown">–</span></div>
       <div class="line"><span>COB (Information)</span><span id="cobBreakdown">–</span></div>
-      <div class="line"><span>Aktivitätspuffer</span><span id="activityBuffer">–</span></div>
+      <div class="line"><span>Aktivitätspuffer <button class="result-info" data-result-info="buffer" type="button">i</button></span><span id="activityBuffer">–</span></div>
       <div class="line"><span>Wirksamer KH-Faktor</span><span id="effectiveRatio">–</span></div>
-      <div class="line"><span>FPE</span><span id="fpeValue">–</span></div>
+      <div class="line"><span>FPE <button class="result-info" data-result-info="fpe" type="button">i</button></span><span id="fpeValue">–</span></div>
       <div class="line"><span>Mahlzeitenhinweis</span><span id="mealHint">–</span></div>
     </div>
   </section>
@@ -406,7 +441,7 @@
             <input id="nightscoutUrl" type="url" placeholder="https://beispiel.azurewebsites.net">
           </div>
           <div>
-            <label for="nightscoutToken">Nightscout-Read-only-Token</label>
+            <div class="setting-label-row"><label for="nightscoutToken">Nightscout-Read-only-Token</label><button type="button" class="info-button" data-setting-info="nightscoutToken">i</button></div>
             <input id="nightscoutToken" type="password" autocomplete="off" placeholder="readonly-…">
             <div class="notice warn token-warning">
               Hier einen Nightscout-Read-only-Token mit der Rolle <strong>readable</strong> eintragen – nicht das API_SECRET oder einen normalen Anmeldecode. Erstellen in Nightscout: Admin Tools → Add New Subject → Rolle readable.
@@ -440,14 +475,33 @@
             <div class="setting-label-row"><label for="defaultTarget">Standard-Zielwert (<span class="glucoseUnitLabel">mmol/l</span>)</label><button type="button" class="info-button" data-setting-info="defaultTarget">i</button></div>
             <input id="defaultTarget" type="number" min="0" step="0.1" value="6.0">
           </div>
-          <div>
-            <div class="setting-label-row"><label for="defaultIsf">Standard-Korrekturfaktor (<span class="isfUnitLabel">mmol/l je IE</span>)</label><button type="button" class="info-button" data-setting-info="defaultIsf">i</button></div>
-            <input id="defaultIsf" type="number" min="0.1" step="0.1" value="2.0">
-          </div>
+
           <div>
             <div class="setting-label-row"><label for="carbRatio">Standard-KH-Faktor (g pro IE)</label><button type="button" class="info-button" data-setting-info="carbRatio">i</button></div>
             <input id="carbRatio" type="number" min="1" step="0.5" value="10">
           </div>
+          <div class="inline-check">
+            <input id="forceAppCarbRatio" type="checkbox">
+            <label for="forceAppCarbRatio" style="margin:0">Standard statt Nightscout verwenden</label>
+            <button type="button" class="info-button" data-setting-info="forceAppCarbRatio">i</button>
+          </div>
+
+          <div>
+            <div class="setting-label-row"><label for="defaultIsf">Standard-Korrekturfaktor (<span class="isfUnitLabel">mmol/l je IE</span>)</label><button type="button" class="info-button" data-setting-info="defaultIsf">i</button></div>
+            <input id="defaultIsf" type="number" min="0.1" step="0.1" value="2.0">
+          </div>
+          <div class="inline-check">
+            <input id="forceAppIsf" type="checkbox">
+            <label for="forceAppIsf" style="margin:0">Standard statt Nightscout verwenden</label>
+            <button type="button" class="info-button" data-setting-info="forceAppIsf">i</button>
+          </div>
+
+          <div class="settings-full-span">
+            <div class="setting-label-row"><label>Zeitabhängige KH- und Korrekturfaktoren</label><button type="button" class="info-button" data-setting-info="profileSchedules">i</button></div>
+            <div class="hint">Jeder Eintrag gilt ab der angegebenen Uhrzeit bis zum nächsten Eintrag. Ohne weitere Zeit gilt 00:00 für den ganzen Tag.</div>
+            <div id="profileScheduleEditor"></div>
+          </div>
+
           <div>
             <div class="setting-label-row"><label for="rounding">Insulin-Dosisschritt (IE)</label><button type="button" class="info-button" data-setting-info="rounding">i</button></div>
             <select id="rounding">
@@ -584,17 +638,7 @@
         <div id="jsonTokenWarning" class="notice warn token-warning" hidden>
           Der Token erlaubt keine Änderungen, kann aber den Zugriff auf Glukose-, Profil- und Behandlungsdaten ermöglichen. Exportdatei daher vertraulich behandeln.
         </div>
-        <div class="row" style="margin-top:10px">
-          <button class="secondary" id="exportQr">Als QR-Code anzeigen</button>
-          <button class="secondary" id="importQr">QR-Code einlesen</button>
-        </div>
-        <input class="file-input" id="qrImageFile" type="file" accept="image/*" capture="environment">
-        <div class="inline-check" style="margin-top:10px">
-          <input id="qrIncludeToken" type="checkbox">
-          <label for="qrIncludeToken" style="margin:0">Nightscout-Read-only-Token in QR-Code aufnehmen</label>
-        </div>
-        <p class="hint">Exportiert werden Einstellungen und KH-Helfer. Medizinische Einzelberechnungen werden nicht gespeichert oder exportiert. Das Token wird nur nach ausdrücklicher Auswahl aufgenommen.</p>
-        <div class="version">Programmversion 0.11</div>
+        <div class="version">Programmversion 0.14.1</div>
       </div>
     </details>
   </section>
@@ -605,20 +649,22 @@
       <button id="closeAppModalX" class="modal-close-x" aria-label="Schließen" title="Schließen">×</button>
       <h2 id="appModalTitle">Info</h2>
       <div id="appModalContent"></div>
-      <div class="qr-actions">
+      <div class="modal-actions">
         <button id="closeAppModal" class="secondary">Schließen</button>
       </div>
     </div>
   </div>
 
-  <div id="qrModal" class="modal" hidden>
+  <div id="settingsDirtyBar" class="dirty-bar" hidden>
+    <strong>Standardeinstellungen geändert</strong>
+    <button id="saveDirtySettings" class="primary" type="button">Speichern</button>
+    <button id="discardDirtySettings" class="secondary" type="button">Verwerfen</button>
+    <button id="dismissDirtySettings" class="secondary dirty-dismiss" type="button" aria-label="Hinweis ausblenden">×</button>
+  </div>
+
+  <div id="setupModal" class="modal" hidden>
     <div class="modal-card">
-      <button id="closeQrModalX" class="modal-close-x" aria-label="Schließen" title="Schließen">×</button>
-      <h2 id="qrModalTitle">Einstellungen übertragen</h2>
-      <div id="qrContent"></div>
-      <div class="qr-actions">
-        <button id="closeQrModal" class="secondary">Schließen</button>
-      </div>
+      <div id="setupContent"></div>
     </div>
   </div>
 
@@ -626,16 +672,16 @@
 </main>
 
 <script>
-const APP_VERSION = '0.11';
+const APP_VERSION = '0.14.2';
 const $ = id => document.getElementById(id);
 
 const defaults = {
-  glucoseUnit:'mmol', targetMmol:6, defaultIsfMmol:2,
+  glucoseUnit:'mmol', targetMmol:6, targetMgdl:110, defaultIsfMmol:2, defaultIsfMgdl:40, forceAppIsf:false, forceAppCarbRatio:false, settingsSchemaVersion:2,
   carbRatio:10, fpeRatio:1, rounding:0.5, carbRounding:5, hypoMinimum:15,
   a0:0, a1:20, a2:40, a3:55,
   bufferA0:0, bufferA1:10, bufferA2:20, bufferA3:30,
   splitL1:100, splitL2:80, splitL3:65, splitL4:50,
-  nightscoutUrl:'', nightscoutToken:'', nightscoutAuto:true, showManualAdjust:false, am1Increase:10, defaultActivity:'A0', sickIncrease:10
+  nightscoutUrl:'', nightscoutToken:'', nightscoutAuto:true, showManualAdjust:false, am1Increase:10, defaultActivity:'A0', sickIncrease:10, localProfileSchedules:null
 };
 const numericSettingIds = [
   'carbRatio','fpeRatio','rounding','carbRounding','hypoMinimum',
@@ -659,6 +705,13 @@ let pendingWorker = null;
 let mealLevelManual = false;
 let fpeManual = false;
 let latestNightscoutMeta = {};
+let lastNightscoutFetchAt = 0;
+let netProposalManual = false;
+let isfSourceMode = 'app';
+let carbRatioSourceMode = 'app';
+let appDefaultIsfMmol = 2;
+let appDefaultIsfMgdl = 40;
+let deferredInstallPrompt = null;
 
 function n(id){ return Number($(id).value || 0); }
 function fmt(v, digits=1){ return Number(v).toLocaleString('de-DE',{minimumFractionDigits:digits,maximumFractionDigits:digits}); }
@@ -675,14 +728,14 @@ function formatGlucose(mmol){ return fmt(fromMmol(mmol), glucoseDigits()); }
 
 const SAFETY_TEXT = "Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt weder eine individuelle Therapieempfehlung noch die Beratung durch medizinisches Fachpersonal. Prüfe alle Eingaben, Berechnungen und vorgeschlagenen Insulin- oder Kohlenhydratmengen eigenverantwortlich und stimme Änderungen deiner Diabetesbehandlung mit deinem Diabetesteam ab. Spätdosen und Korrekturen dürfen nur unter Berücksichtigung von aktuellem Glukoseverlauf, Trend, IOB, Aktivität und der tatsächlichen Mahlzeitenwirkung beurteilt werden.";
 const VERSION_HISTORY = [
+  ['0.14.1','Ersteinrichtung mit Import- und Nightscout-Abgleich, sichtbare und bearbeitbare Tageszeitpläne für KH- und Korrekturfaktoren, schwebende Speicherleiste, erweiterte Aktivitäts- und Ergebnisinformationen, aktualisierte Hilfe, Kontakt- und Projektangaben sowie reine JSON-Sicherung.'],
+  ['0.13','Sichtbarer KH-Faktor mit Nightscout-Quelle, identische Standard-/Profilsteuerung für KH- und Korrekturfaktor sowie lebende Profil-Altersanzeigen.'],
+  ['0.12','Robuster Nightscout-Profilabruf, lebende Altersanzeigen, automatische Aktualisierung mit Schutz manueller IOB-/COB-Werte und plattformspezifische PWA-Installation.'],
   ['0.11','Standard-Korrekturfaktor, ausführliche Info-Buttons in den Einstellungen, neu geordnete Aktivitätswerte, FPE-Standard 1 sowie direkt anpassbarer Krank-/Infekt-Zuschlag.'],
-  ['0.10.2','Gezielte Korrektur der Nightscout-Einrichtung und -Speicherung, vollständige Wirkungsauswahl bei bestehenden KH-Helfern sowie sichtbarer Krankheitszuschlag.'],
-  ['0.10','Kompakter QR-Code, feste Schließen-X, erweiterte KH-Helfer, neue Aktivitäts- und Krankheitsoptionen sowie klarere Nightscout-Statusanzeigen.'],
+  ['0.10.2','Nightscout-Einrichtung, vollständige Wirkungsauswahl bei KH-Helfern und sichtbarer Krankheitszuschlag.'],
   ['0.9','Anrechenbares IOB/COB, verbesserte mobile Weiter-Navigation, neu gegliederte Einstellungen, erweiterte Hilfe und optionaler Token-Import/Export.'],
-  ['0.8.1','Nightscout-Verbindungsaufbau korrigiert: aktueller Glukosewert wird vor allen Zusatzabfragen einzeln geladen.'],
-  ['0.8','Nightscout-Verbindung stabilisiert, kompakter Refresh-Button und speicherbarer Standard-Zielwert.'],
+  ['0.8.1','Stabile Nightscout-Verbindung, kompakter Refresh, speicherbarer Standard-Zielwert und verbesserter Abruf aktueller Glukosedaten.'],
   ['0.7','Kompakter Header, Burger-Menü, gewichteter 20-Minuten-Trend und mobile Eingabeoptimierungen.'],
-  ['0.6','Erweiterte Nightscout-Profil-, IOB- und COB-Anbindung sowie QR-Übertragung.'],
   ['0.5','Einheitenumschaltung, PWA-Icon, Updates sowie Export und Import.'],
   ['0.4','Splitberechnung, FPE-Spätanteil und Aktivitätspuffer.'],
   ['0.3','Gemeinsame Netto-Rechnung und persönliche KH-Helfer.'],
@@ -705,20 +758,24 @@ function installSelectOnFocus(){
 
 const SETTING_INFO={
   nightscoutUrl:{title:'Nightscout-URL',html:`<p>Hier wird die Webadresse der eigenen Nightscout-Instanz eingetragen. Die App verwendet sie ausschließlich zum Lesen der benötigten Glukose-, Profil-, IOB-, COB- und Behandlungsdaten.</p><p>Die Adresse kann mit oder ohne <code>https://</code> eingegeben werden. Für die vollständige Einrichtung wird zusätzlich ein Read-only-Token mit der Rolle <code>readable</code> benötigt.</p>`},
+  nightscoutToken:{title:'Warum nur ein Read-only-Token?',html:`<p>Die App akzeptiert bewusst nur einen Nightscout-Access-Token mit der Rolle <code>readable</code>. So sind alle Datenabfragen einheitlich und auf reine Lesezugriffe ausgelegt.</p><p>Das API_SECRET, ein Login-Code, Admin-Rechte oder ein vollständig offener Nightscout-Zugang werden nicht verwendet. Die App soll weder Behandlungen noch Profile schreiben, verändern oder löschen können.</p><p>Der Token stellt damit technisch klar, dass ausschließlich die für Anzeige und Berechnung benötigten Daten gelesen werden. Ohne gültigen Read-only-Token wird die Nightscout-Verbindung nicht eingerichtet.</p>`},
   nightscoutAuto:{title:'Automatisches Nightscout-Laden',html:`<p>Ist diese Option aktiviert, versucht die App beim Start automatisch aktuelle Nightscout-Daten abzurufen. Ohne Verbindung bleiben die Felder manuell nutzbar.</p><p>Ein manueller Refresh ist weiterhin jederzeit möglich.</p>`},
   glucoseUnit:{title:'Glukoseeinheit',html:`<p>Wähle zwischen mmol/l und mg/dl. Die App rechnet Glukosewerte, Zielwert und Korrekturfaktor beim Wechsel automatisch um.</p><p>Die Einheit verändert nicht die medizinische Bedeutung oder die interne Rechenlogik, sondern nur Darstellung und Eingabeformat.</p>`},
   defaultTarget:{title:'Standard-Zielwert',html:`<p>Dieser Wert wird beim Start und nach dem Zurücksetzen als Zielwert eingesetzt. Der Korrekturbedarf ergibt sich aus der Differenz zwischen aktuellem Glukosewert und Zielwert.</p><p>Ein höheres Ziel führt zu vorsichtigeren Korrekturen. Der Zielwert ist nicht dasselbe wie Alarmgrenze oder Zielbereich einer Glukoseauswertung.</p>`},
-  defaultIsf:{title:'Standard-Korrekturfaktor / ISF',html:`<p>Der Korrekturfaktor beschreibt, um wie viele Glukoseeinheiten 1 IE Insulin den Wert rechnerisch senkt. Bei 2,0 mmol/l je IE und einer Differenz von 4 mmol/l ergibt sich beispielsweise ein Korrekturbedarf von 2 IE.</p><p>Der voreingestellte Wert von 2,0 mmol/l beziehungsweise 36 mg/dl je IE ist nur ein editierbarer Ausgangswert. Der tatsächliche Faktor ist individuell und kann je nach Tageszeit, Aktivität, Krankheit und Insulinempfindlichkeit variieren.</p><p>Liefert Nightscout einen gültigen Profilwert, wird dieser in die Hauptmaske übernommen. Ohne Nightscout verwendet die App diesen gespeicherten Standard; das Hauptfeld bleibt manuell überschreibbar.</p>`},
+  defaultIsf:{title:'Standard-Korrekturfaktor / ISF',html:`<p>Der Korrekturfaktor beschreibt, um wie viele Glukoseeinheiten 1 IE Insulin den Wert rechnerisch senkt. Bei 2,0 mmol/l je IE und einer Differenz von 4 mmol/l ergibt sich beispielsweise ein Korrekturbedarf von 2 IE.</p><p>Die voreingestellten App-Startwerte von 2,0 mmol/l beziehungsweise 40 mg/dl je IE ist nur ein editierbarer Ausgangswert. Der tatsächliche Faktor ist individuell und kann je nach Tageszeit, Aktivität, Krankheit und Insulinempfindlichkeit variieren.</p><p>Liefert Nightscout einen gültigen Profilwert, wird dieser in die Hauptmaske übernommen. Ohne Nightscout verwendet die App diesen gespeicherten Standard; das Hauptfeld bleibt manuell überschreibbar.</p>`},
   carbRatio:{title:'Standard-KH-Faktor',html:`<p>Der KH-Faktor gibt an, wie viele Gramm Kohlenhydrate rechnerisch durch 1 IE Insulin abgedeckt werden. Ein Wert von 10 g pro IE bedeutet beispielsweise 5 IE für 50 g KH vor weiteren Anpassungen.</p><p>Der Faktor ist individuell und kann tageszeitabhängig sein. Ein Nightscout-Profilwert kann den aktuellen Wert in der Hauptmaske ersetzen.</p>`},
+  forceAppCarbRatio:{title:'Standard-KH-Faktor statt Nightscout',html:`<p>Ist diese Option aktiviert, verwendet die App immer den gespeicherten Standard-KH-Faktor und ignoriert einen eventuell vorhandenen zeitabhängigen Nightscout-Profilwert.</p><p>Das kann sinnvoll sein, wenn du dein Nightscout-Profil gegen einen festen Wert testen oder bewusst unabhängig von unbekannten beziehungsweise noch nicht sicher abgestimmten Profileinstellungen rechnen möchtest. Das Nightscout-Profil selbst wird dadurch nicht verändert.</p>`},
+  forceAppIsf:{title:'Standard-Korrekturfaktor statt Nightscout',html:`<p>Ist diese Option aktiviert, verwendet die App immer den gespeicherten Standard-Korrekturfaktor und ignoriert den aktuell gültigen Nightscout-Profilwert.</p><p>Das kann zum Gegenrechnen oder Testen eines festen Faktors sinnvoll sein, besonders wenn Nightscout mehrere Tageszeitenprofile enthält und du diese vorübergehend nicht verwenden möchtest. Die Einstellung verändert Nightscout nicht.</p>`},
   rounding:{title:'Insulin-Dosisschritt',html:`<p>Der errechnete Insulinwert wird auf den ausgewählten Dosisschritt gerundet. Der Schritt sollte zum verwendeten Pen oder zur Pumpe passen.</p><p>Bei 0,5 IE werden beispielsweise 2,3 IE auf 2,5 IE gerundet. Gröbere Schritte führen zwangsläufig zu größeren Rundungsabweichungen.</p>`},
   carbRounding:{title:'KH-Rundung',html:`<p>Eine errechnete KH-Empfehlung wird aus Sicherheitsgründen immer auf den nächsten ausgewählten Schritt <strong>aufgerundet</strong>.</p><p>Beispiel: 13 g rechnerischer Bedarf werden bei 1-g-Schritten zu 13 g, bei 5-g-Schritten zu 15 g und bei 10-g-Schritten zu 20 g. Die Einstellung betrifft nur KH-Empfehlungen, nicht eingegebene Mahlzeiten-KH.</p>`},
   hypoMinimum:{title:'Mindestmenge Ausgleichs-KH',html:`<p>Ist der Glukosewert niedrig oder der Trend fallend, schlägt die App mindestens diese KH-Menge vor – auch wenn die reine Nettorechnung einen kleineren Wert ergibt.</p><p>Beispiel: Rechnerisch wären 5 g nötig, die Mindestmenge steht auf 15 g. Bei niedrigem oder fallendem Wert werden mindestens 15 g vorgeschlagen. Dies ist eine einstellbare Sicherheitsuntergrenze und keine allgemeingültige Hypobehandlung.</p>`},
-  fpeRatio:{title:'FPE pro 1 IE',html:`<p>Eine FPE entspricht 100 kcal aus Fett und Protein. Der eingetragene Wert sagt, wie viele FPE rechnerisch durch 1 IE abgedeckt werden.</p><p>Bei 1 FPE pro IE werden 6 FPE als möglicher späterer Bedarf von bis zu 6 IE ausgewiesen. Dieser Wert wird <strong>nicht</strong> in den Sofortbolus eingerechnet, sondern nur als Spätbedarf zur erneuten Prüfung angezeigt.</p><p>Die klassische Grundannahme liegt bei etwa 1 FPE pro IE; die tatsächliche Reaktion ist jedoch sehr individuell. Menge und Zeitpunkt müssen anhand eigener Verläufe vorsichtig angepasst werden.</p>`},
+  fpeRatio:{title:'FPE-Faktor',html:`<p>Eine FPE entspricht 100 kcal aus Fett und Protein. Der eingetragene Wert sagt, wie viele FPE rechnerisch durch 1 IE abgedeckt werden.</p><p>Bei 1 FPE pro IE werden 6 FPE als möglicher späterer Bedarf von bis zu 6 IE ausgewiesen. Dieser Wert wird <strong>nicht</strong> in den Sofortbolus eingerechnet, sondern nur als Spätbedarf zur erneuten Prüfung angezeigt.</p><div class="notice warn">Als klassische Grundannahme wird häufig 1 IE pro 1 FPE angesetzt; die tatsächliche Reaktion ist jedoch sehr individuell. Menge und Zeitpunkt müssen anhand eigener Verläufe vorsichtig angepasst werden.</div>`},
   splitL1:{title:'Mahlzeitenlevel L1 – Initialbolus',html:`<p>Der Prozentwert bestimmt, welcher Anteil des aktivitätsbereinigten KH-Bolus zunächst gegeben wird. L1 steht für sehr schnelle, eher fettarme Mahlzeiten; deshalb sind standardmäßig 100 % als Initialanteil vorgesehen.</p><p>Ein späterer FPE-Hinweis bleibt davon getrennt und wird nie automatisch in die Sofortdosis übernommen.</p>`},
   splitL2:{title:'Mahlzeitenlevel L2 – Initialbolus',html:`<p>L2 steht für normal gemischte Mahlzeiten. Standardmäßig werden 80 % des aktivitätsbereinigten KH-Bolus zunächst vorgeschlagen und der verbleibende Anteil später zur Prüfung ausgewiesen.</p><p>Der kleinere Initialanteil soll vermeiden, dass Insulin der tatsächlichen KH-Wirkung deutlich vorausläuft.</p>`},
   splitL3:{title:'Mahlzeitenlevel L3 – Initialbolus',html:`<p>L3 steht für deutlich fett- oder proteinreichere und damit häufig verzögerte Mahlzeiten. Standardmäßig werden 65 % des aktivitätsbereinigten KH-Bolus initial vorgeschlagen.</p><p>Der Rest wird nicht automatisch gegeben, sondern später anhand von Glukose, Trend, IOB und tatsächlicher Mahlzeitenwirkung neu beurteilt.</p>`},
   splitL4:{title:'Mahlzeitenlevel L4 – Initialbolus',html:`<p>L4 steht für stark verzögerte, sehr reichhaltige Mahlzeiten. Standardmäßig werden nur 50 % des aktivitätsbereinigten KH-Bolus zunächst vorgeschlagen.</p><p>Damit soll ein frühes Absinken vermieden werden, wenn Insulin deutlich schneller wirkt als die Mahlzeit. Spätere Anteile müssen vollständig neu geprüft werden.</p>`},
-  defaultActivity:{title:'Standard-Aktivitätslevel',html:`<p>Dieses Level wird beim Start und nach dem Zurücksetzen automatisch in der Hauptmaske ausgewählt. Wähle das Level, das deinem üblichen Alltag am ehesten entspricht.</p><p>A0 bleibt das rechnerische Basisprofil. Der persönliche Standardalltag kann trotzdem A−1, A1, A2 oder A3 sein.</p>`},
+  defaultActivity:{title:'Standard-Aktivitätslevel',html:`<p>Dieses Level wird beim Start und nach dem Zurücksetzen automatisch in der Hauptmaske ausgewählt. Wähle das Level, das deinem üblichen Alltag am ehesten entspricht.</p><p><strong>A−1:</strong> deutlich weniger Bewegung als üblich, überwiegend sitzend, keine längeren Spaziergänge.</p><p><strong>A0:</strong> das ursprüngliche neutrale Rechen- und Basisprofil ohne Aktivitätsanpassung. In den Einstellungen kann trotzdem ein anderes Level als persönlicher Alltag vorausgewählt werden.</p><p><strong>A1:</strong> etwa 45–60 Minuten zügiges Gehen oder ein längerer Spaziergang; Puls etwas erhöht, Unterhaltung weiter möglich.</p><p><strong>A2:</strong> etwa 60–120 Minuten klar aktive Bewegung oder mehrere längere Aktivitäten, zum Beispiel langer Spaziergang plus Radfahren oder Schwimmen.</p><p><strong>A3:</strong> mehrere Stunden ungewöhnlich hohe Gesamtaktivität, etwa lange Wanderung, Radtour oder mehrere größere Aktivitäten.</p><p>Wenn du unsicher bist, wähle zunächst A0 als Basis und beobachte deine persönlichen Verläufe.</p>`},
+  profileSchedules:{title:'Zeitabhängige Faktoren',html:`<p>KH-Faktor und Korrekturfaktor können je nach Tageszeit unterschiedlich sein. Jeder Eintrag gilt ab seiner Startzeit bis zum nächsten Eintrag beziehungsweise bis Mitternacht.</p><p>Nightscout-Zeitpläne werden vollständig übernommen und lokal als Offline-Fallback gespeichert. Du kannst einzelne Zeiten und Werte später bearbeiten, neue Zeiträume hinzufügen oder Einträge löschen.</p><p>Mindestens ein Eintrag ab 00:00 sollte bestehen bleiben. Die App verwendet jeweils den zur aktuellen Uhrzeit gültigen Wert.</p>`},
   am1Increase:{title:'A−1 Bolusanpassung',html:`<p>A−1 steht für einen deutlich ruhigeren Tag als das Basisprofil. Der eingetragene Wert erhöht den errechneten Mahlzeitenbolus.</p><p>Bei 10 % werden aus einem rechnerischen Bolus von 5 IE zunächst 5,5 IE. Die Einstellung verändert kein Basalinsulin.</p>`},
   a0:{title:'A0 Bolusanpassung',html:`<p>A0 ist das rechnerische Basisprofil. Mit 0 % bleibt der Mahlzeitenbolus unverändert.</p><p>Der Wert kann technisch angepasst werden, sollte aber nur verändert werden, wenn das eigene Basisprofil bewusst anders definiert wird. Die Einstellung verändert kein Basalinsulin.</p>`},
   a1:{title:'A1 Bolusanpassung',html:`<p>Der eingetragene Prozentwert reduziert den errechneten Mahlzeitenbolus für einen aktiven Tag. Bei 20 % werden aus 5 IE zunächst 4 IE.</p><p>Die Einstellung betrifft nur den Bolusrechner und verändert kein Basalinsulin.</p>`},
@@ -745,7 +802,7 @@ const HELP_DETAILS={
   activity:`<p><strong>Grundlogik:</strong> Aktivitätslevel reduzieren den rechnerischen Bedarf und können zusätzliche KH-Puffer erzeugen. Zeitpunkt und Trend beeinflussen die Vorsicht der Empfehlung.</p><p><strong>Einstellbar:</strong> Reduktionen und Puffer je Aktivitätslevel. Die zusätzliche manuelle Anpassung ist optional.</p>`,
   late:`<p><strong>Grundlogik:</strong> Der Rechner trennt Sofortanteil, verzögerten KH-Anteil und möglichen FPE-Anteil. Diese Werte sind eine zeitliche Orientierung, keine automatische Therapieentscheidung.</p><p><strong>Kontrolle:</strong> Vor jeder Spätdosis aktuelle Glukose, Trend, IOB, Aktivität und tatsächliche Mahlzeitenwirkung erneut prüfen.</p>`,
   helpers:`<p><strong>Grundlogik:</strong> KH-Helfer übersetzen einen KH-Bedarf in vertraute Portionen. Die Liste wird lokal gespeichert.</p><p><strong>Einstellbar:</strong> Name, Portionseinheit, KH-Menge, Teilbarkeit und Wirkgeschwindigkeit. Die Helfer werden gemeinsam mit den Einstellungen exportiert.</p>`,
-  settings:`<p><strong>Struktur:</strong> Nightscout steht oben, danach folgen Aktuelle Situation, Mahlzeit, Aktivität und Anpassung sowie Allgemein/Sonstiges. KH-Helfer und Sicherung/Übertragung bleiben eigene Bereiche.</p><p><strong>Speicherung:</strong> Änderungen werden lokal gespeichert. Standardwerte lassen sich wiederherstellen; JSON und QR übertragen Einstellungen auf andere Geräte.</p>`
+  settings:`<p><strong>Struktur:</strong> Nightscout steht oben, danach folgen Aktuelle Situation mit Tageszeitplänen, Mahlzeit, Aktivität und Anpassung sowie Allgemein/Sonstiges. KH-Helfer und Sicherung/Übertragung bleiben eigene Bereiche.</p><p><strong>Speicherung:</strong> Änderungen werden erst nach bewusster Bestätigung gespeichert. Die schwebende Leiste bietet Speichern, Verwerfen oder Ausblenden. JSON-Sicherungsdateien übertragen Einstellungen auf andere Geräte.</p>`
 };
 function installHelpButtons(){
   document.querySelectorAll('[data-help-more]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -771,10 +828,18 @@ function installNextFieldNavigation(){
     if(next) next.focus(); else e.target.blur();
   });
 }
-function proposeNetIobCob(){
+function setProposalManualState(manual){
+  netProposalManual=manual;
+  $('proposalState').textContent=manual
+    ? 'Manuell angepasst – automatische Aktualisierungen überschreiben diese Werte nicht.'
+    : 'Automatischer Vorschlag';
+  $('refreshProposal').hidden=!manual;
+}
+function proposeNetIobCob(force=false){
+  if(netProposalManual && !force) return;
   const totalIob=n('iob');
   const totalCob=n('cob');
-  const ratio=Math.max(0.1,n('carbRatio'));
+  const ratio=Math.max(0.1,n('carbRatioCurrent'));
   const diff=totalIob-(totalCob/ratio);
   if(diff>0.05){
     $('iobEffective').value=diff.toFixed(2);
@@ -786,8 +851,67 @@ function proposeNetIobCob(){
     $('iobEffective').value='0';
     $('activeCarbs').value='0';
   }
+  setProposalManualState(false);
 }
 
+
+function runsAsInstalledPwa(){
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone===true;
+}
+function updateInstallMenuVisibility(){
+  const item=$('installPwaMenuItem');
+  if(item) item.hidden=runsAsInstalledPwa();
+}
+function platformInstallIntro(){
+  const ua=navigator.userAgent||'';
+  if(/iPad|iPhone|iPod/i.test(ua)) return 'Für iPhone und iPad erfolgt die Installation am zuverlässigsten über Safari.';
+  if(/Android/i.test(ua)) return 'Auf Android empfehlen wir Chrome oder Edge für die Installation.';
+  return 'Auf dem Desktop empfehlen wir Chrome oder Edge für die direkte App-Installation.';
+}
+function openInstallHelp(){
+  $('appModalTitle').textContent='Als App / PWA installieren';
+  $('appModalContent').innerHTML=`
+    <div class="help-card">
+      <p>${platformInstallIntro()}</p>
+      <p><strong>Warum installieren?</strong></p>
+      <ul class="install-benefits">
+        <li>eigenes App-Symbol und schneller Start ohne erneute Suche nach der Webseite</li>
+        <li>eigenständige Darstellung ohne normalen Browser-Tab</li>
+        <li>Offline-Nutzung nach dem ersten vollständigen Laden</li>
+        <li>die App prüft auf neue Versionen und bietet verfügbare Updates über „Jetzt aktualisieren“ an</li>
+      </ul>
+      <p><strong>Wichtig:</strong> Einstellungen und KH-Helfer werden lokal im jeweiligen Browser beziehungsweise in der installierten PWA gespeichert. Für den Wechsel zwischen Browsern oder Geräten nutze JSON-Export.</p>
+    </div>
+    <div class="help-card install-platform">
+      <h3>Android</h3>
+      <p>Öffne die Seite in Chrome oder Edge. Tippe auf das Browsermenü und wähle „App installieren“ oder „Zum Startbildschirm hinzufügen“. Wenn ein direkter Installationsdialog verfügbar ist, öffnet die App ihn beim Antippen dieses Menüpunktes automatisch.</p>
+    </div>
+    <div class="help-card install-platform">
+      <h3>iPhone und iPad</h3>
+      <p>Öffne die Seite in Safari. Tippe auf „Teilen“, anschließend auf „Zum Home-Bildschirm“ und gegebenenfalls auf „Als Web-App öffnen“. Danach erscheint ein eigenes Symbol auf dem Home-Bildschirm.</p>
+    </div>
+    <div class="help-card install-platform">
+      <h3>Windows, macOS und Linux</h3>
+      <p>Die Webversion ist in praktisch allen aktuellen Browsern nutzbar. Für die Installation als eigenständige App verwende unter Windows, macOS oder Linux am besten Chrome oder Edge und wähle im Browsermenü „App installieren“.</p>
+    </div>`;
+  $('appModal').hidden=false;
+}
+async function handleInstallPwa(){
+  if(runsAsInstalledPwa()){
+    updateInstallMenuVisibility();
+    return;
+  }
+  if(deferredInstallPrompt){
+    const promptEvent=deferredInstallPrompt;
+    deferredInstallPrompt=null;
+    await promptEvent.prompt();
+    try{ await promptEvent.userChoice; }catch(err){}
+    updateInstallMenuVisibility();
+    return;
+  }
+  openInstallHelp();
+}
 
 function openKetoneInfo(){
   $('appModalTitle').textContent='Blutketone – Orientierung';
@@ -806,7 +930,13 @@ function openAppModal(view){
   const title=$('appModalTitle'),content=$('appModalContent');
   if(view==='info'){
     title.textContent='Info';
-    content.innerHTML=`<div class="info-section"><strong>Bolusrechner · Version ${APP_VERSION}</strong><p>Netto-Rechnung mit Split, FPE, Aktivitätspuffer und optionaler Nightscout-Anbindung.</p></div><div class="notice warn" style="font-size:1rem;line-height:1.5">${SAFETY_TEXT}</div>`;
+    content.innerHTML=`
+      <div class="info-section"><strong>Bolusrechner · Version ${APP_VERSION}</strong><p>Lokale Rechen- und Orientierungshilfe für Mahlzeiten-, Korrektur- und Aktivitätssituationen.</p></div>
+      <div class="notice warn" style="font-size:1rem;line-height:1.5">${SAFETY_TEXT}</div>
+      <div class="help-card"><h3>Daten und Privatsphäre</h3><p>Die App übermittelt keine Gesundheits-, Nightscout- oder Berechnungsdaten an einen vom Projektherausgeber betriebenen Server. Einstellungen, KH-Helfer und gegebenenfalls Nightscout-Zugangsdaten werden lokal im jeweiligen Browser beziehungsweise in der installierten PWA gespeichert. Bei eingerichteter Nightscout-Verbindung kommuniziert dein Gerät direkt mit der von dir angegebenen Nightscout-Instanz.</p></div>
+      <div class="notice warn"><strong>Eigenverantwortliche Nutzung:</strong> Alle Eingaben, übernommenen Profilwerte und Berechnungsergebnisse müssen vor einer Anwendung eigenständig geprüft werden. Die App trifft keine Therapieentscheidung und übernimmt keine Verantwortung für Insulindosierungen oder KH-Mengen.</div>
+      <div class="help-card"><h3>Technische Angaben</h3><p><strong>Version:</strong> ${APP_VERSION}<br><strong>Veröffentlichung/Erstellung:</strong> 19.07.2026<br><strong>App-Typ:</strong> Progressive Web App<br><strong>Technik:</strong> HTML, CSS und JavaScript<br><strong>Offline-Funktion:</strong> Service Worker und lokaler Cache<br><strong>Lokale Speicherung:</strong> Browser Local Storage<br><strong>Frameworks/Bibliotheken:</strong> keine externen Laufzeitbibliotheken</p><p><a href="https://teute0815.github.io/bolusrechner/" target="_blank" rel="noopener">App öffnen</a><br><a href="https://github.com/Teute0815/bolusrechner" target="_blank" rel="noopener">Projekt und Quellcode auf GitHub</a></p></div>
+      <div class="help-card"><h3>Entwicklung und Urheberschaft</h3><p><strong>Konzept, fachliche Anforderungen und inhaltliche Ausgestaltung:</strong> Teute0815</p><p><strong>Technische Umsetzung:</strong> KI-gestützt mit ChatGPT von OpenAI. Die fachlichen Entscheidungen, Berechnungsmodelle, Bedienkonzepte und Freigaben wurden vom Projektherausgeber vorgegeben und geprüft.</p><p>Die Nutzung erfolgt ausschließlich eigenverantwortlich. Jede Person muss ihre eigenen Faktoren, Zielwerte, IOB-/COB-Angaben und Ergebnisse prüfen.</p></div>`;
   }else if(view==='help'){
     title.textContent='Hilfe';
     content.innerHTML=`
@@ -815,14 +945,16 @@ function openAppModal(view){
       <div class="help-card"><h3>Aktivität</h3><p>Aktivitätsstufe und Zeitpunkt können Insulinbedarf und KH-Puffer verändern. Eine zusätzliche manuelle Anpassung lässt sich optional einblenden.</p><button class="secondary mini-btn" data-help-more="activity">Mehr Info</button><div class="help-more" data-help-detail="activity" hidden></div></div>
       <div class="help-card"><h3>Spätdosen</h3><p>Verzögerte KH- und FPE-Anteile werden getrennt ausgewiesen. Sie müssen anhand des aktuellen Verlaufs erneut beurteilt werden.</p><button class="secondary mini-btn" data-help-more="late">Mehr Info</button><div class="help-more" data-help-detail="late" hidden></div></div>
       <div class="help-card"><h3>KH-Helfer</h3><p>KH-Helfer übersetzen benötigte Kohlenhydrate in vertraute Portionen. Eigene Lebensmittel und Portionen können lokal gespeichert werden.</p><button class="secondary mini-btn" data-help-more="helpers">Mehr Info</button><div class="help-more" data-help-detail="helpers" hidden></div></div>
-      <div class="help-card"><h3>Einstellungen</h3><p>Die Einstellungen steuern Nightscout, Zielwerte, Mahlzeitenlevel, Aktivität und Rundung. Sie sind nach denselben Bereichen wie die Hauptmaske gegliedert.</p><button class="secondary mini-btn" data-help-more="settings">Mehr Info</button><div class="help-more" data-help-detail="settings" hidden></div></div>`;
+      <div class="help-card"><h3>Nightscout und Zeitpläne</h3><p>Ein Read-only-Token lädt aktuelle Werte und vollständige Tageszeitpläne. Lokale Zeitpläne dienen offline als Fallback und können bearbeitet werden.</p></div>
+      <div class="help-card"><h3>Datensicherung</h3><p>Einstellungen und KH-Helfer werden ausschließlich als JSON-Datei exportiert und wieder importiert. Ein optional exportierter Token muss besonders geschützt werden.</p></div>
+      <div class="help-card"><h3>Einstellungen</h3><p>Die Einstellungen steuern Nightscout, Zielwerte, zeitabhängige Faktoren, Mahlzeitenlevel, Aktivität und Rundung. Ungespeicherte Änderungen werden durch eine schwebende Leiste angezeigt.</p><button class="secondary mini-btn" data-help-more="settings">Mehr Info</button><div class="help-more" data-help-detail="settings" hidden></div></div>`;
     installHelpButtons();
   }else if(view==='versions'){
     title.textContent='Versionsverlauf';
     content.innerHTML='<ol class="version-list">'+VERSION_HISTORY.map(v=>`<li><strong>Version ${v[0]}</strong><br>${v[1]}</li>`).join('')+'</ol>';
   }else if(view==='contact'){
     title.textContent='Kontakt';
-    content.innerHTML='<p>Für diese Testversion ist noch keine Kontaktadresse hinterlegt.</p>';
+    content.innerHTML=`<div class="help-card"><h3>Projekt und Kontakt</h3><p><a href="https://github.com/Teute0815/bolusrechner" target="_blank" rel="noopener">Projekt und Quellcode auf GitHub</a></p><p><a href="https://github.com/Teute0815/bolusrechner/issues" target="_blank" rel="noopener">Fehler melden oder Funktionswunsch einreichen</a></p><p><a href="https://github.com/Teute0815/bolusrechner/discussions" target="_blank" rel="noopener">Allgemeine Frage oder Diskussion starten</a></p></div><div class="notice warn">GitHub-Beiträge sind öffentlich. Bitte keine Gesundheitsdaten, Glukoseverläufe mit persönlichen Angaben, Nightscout-Adressen, Tokens oder andere vertrauliche Informationen veröffentlichen.</div>`;
   }
   $('appModal').hidden=false;
 }
@@ -830,19 +962,28 @@ function openAppModal(view){
 function unitText(){ return currentUnit === 'mgdl' ? 'mg/dl' : 'mmol/l'; }
 
 function setUnit(newUnit, convertValues=true){
-  if(newUnit !== 'mmol' && newUnit !== 'mgdl') return;
-  const oldUnit = currentUnit;
-  if(convertValues && oldUnit !== newUnit){
-    const ids=['glucose','target','defaultTarget','isf','defaultIsf'];
-    ids.forEach(id=>{
+  if(newUnit!=='mmol' && newUnit!=='mgdl') return;
+  const oldUnit=currentUnit;
+  if(convertValues && oldUnit!==newUnit){
+    if(oldUnit==='mmol') appDefaultIsfMmol=Math.max(0.1,n('defaultIsf'));
+    else appDefaultIsfMgdl=Math.max(1,n('defaultIsf'));
+
+    ['glucose','target','defaultTarget'].forEach(id=>{
       const el=$(id);
-      if(el.value==='') return;
+      if(!el || el.value==='') return;
       let val=Number(el.value);
       if(oldUnit==='mmol' && newUnit==='mgdl') val*=18;
       if(oldUnit==='mgdl' && newUnit==='mmol') val/=18;
-      el.value = (id==='isf'||id==='defaultIsf'||newUnit==='mmol') ? val.toFixed(1) : Math.round(val);
+      el.value=newUnit==='mgdl'?String(Math.round(val)):val.toFixed(1);
     });
+
+    if(isfSourceMode!=='app'){
+      const val=Number($('isf').value);
+      const converted=oldUnit==='mmol'?val*18:val/18;
+      $('isf').value=newUnit==='mgdl'?String(Math.round(converted)):converted.toFixed(1);
+    }
   }
+
   currentUnit=newUnit;
   document.querySelectorAll('.glucoseUnitLabel').forEach(el=>el.textContent=unitText());
   document.querySelectorAll('.isfUnitLabel').forEach(el=>el.textContent=(currentUnit==='mgdl'?'mg/dl je IE':'mmol/l je IE'));
@@ -851,7 +992,61 @@ function setUnit(newUnit, convertValues=true){
   $('defaultTarget').step=currentUnit==='mgdl'?'1':'0.1';
   $('isf').step=currentUnit==='mgdl'?'1':'0.1';
   $('defaultIsf').step=currentUnit==='mgdl'?'1':'0.1';
+
+  $('defaultIsf').value=currentUnit==='mgdl'?String(Math.round(appDefaultIsfMgdl)):appDefaultIsfMmol.toFixed(1);
+  if(isfSourceMode==='app') applyAppStandardIsf();
+  renderProfileScheduleEditor(getStoredSettings());
 }
+
+function applyAppStandardIsf(message='App-Standard; manuell änderbar.'){
+  const schedules=getStoredSettings().localProfileSchedules;
+  const localMmol=schedules?.sens?scheduleValue(schedules.sens):null;
+  const mmol=localMmol>0?localMmol:appDefaultIsfMmol;
+  $('isf').value=currentUnit==='mgdl'?String(Math.round(mmol*18)):Number(mmol).toFixed(1);
+  $('isfSource').textContent=localMmol>0?'Lokaler Profil-Zeitplan; manuell änderbar.':message;
+  isfSourceMode='app';
+}
+function applyAppStandardCarbRatio(message='App-Standard; manuell änderbar.'){
+  const schedules=getStoredSettings().localProfileSchedules;
+  const localRatio=schedules?.carbratio?scheduleValue(schedules.carbratio):null;
+  $('carbRatioCurrent').value=localRatio>0?String(localRatio):($('carbRatio').value || '10');
+  $('carbRatioSource').textContent=localRatio>0?'Lokaler Profil-Zeitplan; manuell änderbar.':message;
+  carbRatioSourceMode='app';
+}
+
+
+function scheduleTime(item){
+  if(typeof item?.time==='string' && /^\d{1,2}:\d{2}/.test(item.time)) return item.time.slice(0,5).padStart(5,'0');
+  const sec=Number(item?.timeAsSeconds);
+  if(Number.isFinite(sec)){const h=Math.floor(sec/3600)%24,m=Math.floor((sec%3600)/60);return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
+  return '00:00';
+}
+function scheduleRows(schedule,fallback){
+  const arr=Array.isArray(schedule)&&schedule.length?schedule:[{time:'00:00',value:fallback}];
+  return arr.map(x=>({time:scheduleTime(x),value:Number(x.value??x.amount??fallback)})).sort((a,b)=>a.time.localeCompare(b.time));
+}
+function scheduleToProfile(rows){
+  return rows.sort((a,b)=>a.time.localeCompare(b.time)).map(x=>{const [h,m]=x.time.split(':').map(Number);return {time:x.time,timeAsSeconds:h*3600+m*60,value:Number(x.value)};});
+}
+function renderProfileScheduleEditor(settings=getStoredSettings()){
+  const root=$('profileScheduleEditor'); if(!root) return;
+  const schedules=settings.localProfileSchedules||{};
+  const cr=scheduleRows(schedules.carbratio,Number(settings.carbRatio||10));
+  const sens=scheduleRows(schedules.sens,Number(settings.defaultIsfMmol||2));
+  const unit=currentUnit==='mgdl'?'mg/dl je IE':'mmol/l je IE';
+  const list=(type,title,rows)=>`<div class="schedule-editor"><h4>${title}</h4><div data-schedule-list="${type}">${rows.map((r,i)=>`<div class="schedule-row" data-schedule-row="${type}"><div><label>Ab</label><input type="time" data-schedule-time value="${r.time}"></div><div><label>${type==='sens'?unit:'g pro IE'}</label><input type="number" data-schedule-value min="0.1" step="${type==='sens'?(currentUnit==='mgdl'?'1':'0.1'):'0.5'}" value="${type==='sens'&&currentUnit==='mgdl'?Math.round(r.value*18):r.value}"></div><button type="button" class="secondary" data-remove-schedule aria-label="Zeitraum löschen">Löschen</button></div>`).join('')}</div><button type="button" class="secondary schedule-add" data-add-schedule="${type}">+ Zeitraum hinzufügen</button></div>`;
+  root.innerHTML=list('carbratio','KH-Faktor-Zeitplan',cr)+list('sens','Korrekturfaktor-Zeitplan',sens);
+  root.querySelectorAll('[data-remove-schedule]').forEach(btn=>btn.onclick=()=>{const list=btn.closest('[data-schedule-list]'); if(list.querySelectorAll('[data-schedule-row]').length<=1){alert('Mindestens ein Zeitraum muss bestehen bleiben.');return;} btn.closest('[data-schedule-row]').remove(); root.dispatchEvent(new Event('input',{bubbles:true}));});
+  root.querySelectorAll('[data-add-schedule]').forEach(btn=>btn.onclick=()=>{const type=btn.dataset.addSchedule,list=root.querySelector(`[data-schedule-list="${type}"]`),row=document.createElement('div'); row.className='schedule-row';row.dataset.scheduleRow=type;row.innerHTML=`<div><label>Ab</label><input type="time" data-schedule-time value="12:00"></div><div><label>${type==='sens'?unit:'g pro IE'}</label><input type="number" data-schedule-value min="0.1" step="${type==='sens'?(currentUnit==='mgdl'?'1':'0.1'):'0.5'}" value="${type==='sens'?(currentUnit==='mgdl'?40:2):10}"></div><button type="button" class="secondary" data-remove-schedule>Löschen</button>`; list.appendChild(row); row.querySelector('[data-remove-schedule]').onclick=()=>{row.remove();root.dispatchEvent(new Event('input',{bubbles:true}));}; root.dispatchEvent(new Event('input',{bubbles:true}));});
+}
+function collectProfileScheduleEditor(base){
+  const root=$('profileScheduleEditor'); if(!root) return base||null;
+  const out={...(base||{}),units:'mmol/l'};
+  ['carbratio','sens'].forEach(type=>{const rows=[...root.querySelectorAll(`[data-schedule-row="${type}"]`)].map(row=>({time:row.querySelector('[data-schedule-time]').value||'00:00',value:Number(row.querySelector('[data-schedule-value]').value||0)/(type==='sens'&&currentUnit==='mgdl'?18:1)})); out[type]=scheduleToProfile(rows);});
+  return out;
+}
+function formatSchedule(schedule,kind){return scheduleRows(schedule,kind==='sens'?2:10).map(r=>`${r.time} · ${kind==='sens'?fmt(r.value,1)+' mmol/l je IE':fmt(r.value,1)+' g/IE'}`).join('<br>');}
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 
 function getStoredSettings(){
   let stored = JSON.parse(localStorage.getItem('bolusSettingsV010') || 'null');
@@ -867,6 +1062,8 @@ function applySettings(s){
   $('nightscoutUrl').value=s.nightscoutUrl || '';
   $('nightscoutToken').value=s.nightscoutToken || '';
   $('nightscoutAuto').checked=s.nightscoutAuto !== false;
+  $('forceAppIsf').checked=s.forceAppIsf === true;
+  $('forceAppCarbRatio').checked=s.forceAppCarbRatio === true;
   $('showManualAdjust').checked=s.showManualAdjust === true;
   $('am1Increase').value=s.am1Increase ?? 10;
   $('defaultActivity').value=s.defaultActivity || 'A0';
@@ -874,12 +1071,14 @@ function applySettings(s){
   updateManualAdjustVisibility();
   setUnit(s.glucoseUnit || 'mmol', false);
   const targetMmol=Number.isFinite(Number(s.targetMmol))?Number(s.targetMmol):6;
-  const defaultIsfMmol=Number.isFinite(Number(s.defaultIsfMmol))?Number(s.defaultIsfMmol):2;
+  appDefaultIsfMmol=Number.isFinite(Number(s.defaultIsfMmol))?Number(s.defaultIsfMmol):2;
+  appDefaultIsfMgdl=Number.isFinite(Number(s.defaultIsfMgdl))?Number(s.defaultIsfMgdl):40;
   $('defaultTarget').value=currentUnit==='mgdl'?String(Math.round(targetMmol*18)):targetMmol.toFixed(1);
-  $('defaultIsf').value=currentUnit==='mgdl'?String(Math.round(defaultIsfMmol*18)):defaultIsfMmol.toFixed(1);
+  $('defaultIsf').value=currentUnit==='mgdl'?String(Math.round(appDefaultIsfMgdl)):appDefaultIsfMmol.toFixed(1);
   $('target').value=$('defaultTarget').value;
-  $('isf').value=$('defaultIsf').value;
-  $('isfSource').textContent='App-Standard; manuell änderbar.';
+  applyAppStandardIsf();
+  renderProfileScheduleEditor(s);
+  applyAppStandardCarbRatio();
   $('sickCurrentIncrease').value=s.sickIncrease ?? 10;
   if(currentUnit==='mgdl'){
     $('glucose').value='108';
@@ -892,26 +1091,36 @@ function collectSettings(){
   numericSettingIds.forEach(k=>s[k]=n(k));
   s.glucoseUnit=$('glucoseUnit').value;
   s.targetMmol=currentUnit==='mgdl'?n('defaultTarget')/18:n('defaultTarget');
-  s.defaultIsfMmol=currentUnit==='mgdl'?n('defaultIsf')/18:n('defaultIsf');
+  s.targetMgdl=currentUnit==='mgdl'?n('defaultTarget'):Number(getStoredSettings().targetMgdl||110);
+  if(currentUnit==='mgdl') appDefaultIsfMgdl=Math.max(1,n('defaultIsf'));
+  else appDefaultIsfMmol=Math.max(0.1,n('defaultIsf'));
+  s.defaultIsfMmol=appDefaultIsfMmol;
+  s.defaultIsfMgdl=appDefaultIsfMgdl;
   s.nightscoutUrl=$('nightscoutUrl').value.trim();
   s.nightscoutToken=$('nightscoutToken').value.trim();
   s.nightscoutAuto=$('nightscoutAuto').checked;
+  s.forceAppIsf=$('forceAppIsf').checked;
+  s.forceAppCarbRatio=$('forceAppCarbRatio').checked;
+  s.settingsSchemaVersion=2;
   s.showManualAdjust=$('showManualAdjust').checked;
   s.am1Increase=n('am1Increase');
   s.defaultActivity=$('defaultActivity').value;
   s.sickIncrease=n('sickIncrease');
+  s.localProfileSchedules=collectProfileScheduleEditor(getStoredSettings().localProfileSchedules||null);
   return s;
 }
 function loadSettings(){ applySettings(getStoredSettings()); }
 function saveSettings(){
   const s=collectSettings();
   localStorage.setItem('bolusSettingsV010', JSON.stringify(s));
+  markSettingsSaved();
   alert('Einstellungen lokal gespeichert.');
   if(s.nightscoutAuto) loadNightscoutData(false);
 }
 function restoreSettings(){
   localStorage.removeItem('bolusSettingsV010');
   applySettings(defaults);
+  markSettingsSaved();
 }
 
 function migrateHelpersV010(list){
@@ -1023,33 +1232,38 @@ function exportData(){
   a.click();
   URL.revokeObjectURL(a.href);
 }
-function importDataFile(file){
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const data=JSON.parse(reader.result);
-      if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Dateiformat');
-      const importedSettings={...defaults,...(data.settings||{})};
-      const currentToken=getStoredSettings().nightscoutToken || '';
-      if(importedSettings.nightscoutToken){
-        const takeImported=confirm('Die Importdatei enthält einen Nightscout-Token.\n\nOK = enthaltenen Token übernehmen\nAbbrechen = bereits gespeicherten Token behalten');
-        if(!takeImported) importedSettings.nightscoutToken=currentToken;
-      }else{
-        importedSettings.nightscoutToken=currentToken;
-      }
-      localStorage.setItem('bolusSettingsV010',JSON.stringify(importedSettings));
-      if(Array.isArray(data.helpers)){
-        helpers=data.helpers;
-        localStorage.setItem('bolusHelpersV010',JSON.stringify(helpers));
-      }
-      applySettings(importedSettings);
-      renderHelperEditor();
-      alert('Einstellungen und KH-Helfer wurden importiert.');
-    }catch(err){
-      alert('Import fehlgeschlagen: '+err.message);
-    }
-  };
-  reader.readAsText(file);
+function importDataFile(file, options={}){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Dateiformat');
+        const raw=data.settings||{};
+        const missing=Object.keys(defaults).filter(k=>!(k in raw));
+        const importedSettings={...defaults,...raw};
+        const currentToken=getStoredSettings().nightscoutToken || '';
+        if(importedSettings.nightscoutToken && !options.setup){
+          const takeImported=confirm('Die Importdatei enthält einen Nightscout-Token.\n\nOK = enthaltenen Token übernehmen\nAbbrechen = bereits gespeicherten Token behalten');
+          if(!takeImported) importedSettings.nightscoutToken=currentToken;
+        }else if(!importedSettings.nightscoutToken){ importedSettings.nightscoutToken=currentToken; }
+        localStorage.setItem('bolusSettingsV010',JSON.stringify(importedSettings));
+        if(Array.isArray(data.helpers)){
+          helpers=migrateHelpersV010(data.helpers);
+          localStorage.setItem('bolusHelpersV010',JSON.stringify(helpers));
+        }
+        applySettings(importedSettings); renderHelperEditor(); markSettingsSaved();
+        const report={version:String(data.version||'unbekannt'),missing,settings:importedSettings,hasToken:Boolean(importedSettings.nightscoutToken),hasUrl:Boolean(importedSettings.nightscoutUrl)};
+        if(!options.silent){
+          const old=report.version!==APP_VERSION;
+          alert(`Import erfolgreich.${old?'\n\nSicherung: Version '+report.version+' · aktuelle App: '+APP_VERSION:''}${missing.length?'\n\nNeuere Einstellungen wurden mit aktuellen Standardwerten ergänzt: '+missing.join(', '):'\n\nAlle aktuell erforderlichen Einstellungsfelder waren vorhanden.'}`);
+        }
+        resolve(report);
+      }catch(err){ if(!options.silent) alert('Import fehlgeschlagen: '+err.message); reject(err); }
+    };
+    reader.onerror=()=>reject(new Error('Datei konnte nicht gelesen werden'));
+    reader.readAsText(file);
+  });
 }
 
 function automaticLevel(fat, protein, carbs){
@@ -1201,7 +1415,7 @@ function calculate(){
   const manualLevel=$('mealLevel').value;
   const activity=$('activity').value, reduction=getReduction(activity);
   const timing=$('timing').value, trend=$('trend').value, manual=n('manualAdjust');
-  const carbRatio=n('carbRatio'), fpeRatio=n('fpeRatio'), rounding=n('rounding');
+  const carbRatio=n('carbRatioCurrent'), fpeRatio=n('fpeRatio'), rounding=n('rounding');
   const carbRounding=n('carbRounding'), hypoMinimum=n('hypoMinimum');
 
   if(isf<=0||carbRatio<=0||fpeRatio<=0){ alert('Bitte gültige Faktoren eingeben.'); return; }
@@ -1215,7 +1429,11 @@ function calculate(){
   if(['down','downfast'].includes(trend)) warnings.push(['warn','Fallender Trend: Der Wert kann während der Kohlenhydratwirkung noch weiter sinken.']);
   if(latestNightscoutMeta.trendDisagreement)
     warnings.push(['warn','Achtung: Aktueller Nightscout-Trend weicht deutlich vom gewichteten 20-Minuten-Trend ab. Graph prüfen.']);
-  if(activity!=='NONE'&&['A2','A3'].includes(activity)) warnings.push(['warn','Hohe Aktivität kann länger und stärker nachwirken als dieses vereinfachte Modell abbildet.']);
+  if(['A2','A3'].includes(activity)){
+    let msg='Die App hat den aktuellen Mahlzeitenbolus wegen der erwarteten Aktivitätswirkung reduziert. Dadurch kann der Glukosewert zunächst höher ansteigen. Bei langer oder außergewöhnlicher Aktivität kann die erhöhte Insulinempfindlichkeit zusammen mit dem weiterhin wirkenden Basalinsulin später trotzdem zu einem deutlichen Abfall führen. Frühe Korrekturen daher besonders vorsichtig beurteilen und Glukose, Trend, IOB sowie den bisherigen Aktivitätsverlauf beobachten.';
+    if(activity==='A3') msg+=' Das gilt besonders, wenn das Basalinsulin noch für einen normalen Tag dosiert wurde und die hohe Aktivität spontan oder ohne vorherige Basalanpassung stattfindet. Eine eventuell notwendige Basalanpassung ist nicht Bestandteil dieser Berechnung.';
+    warnings.push(['warn',msg]);
+  }
   if(activity!=='NONE'&&['current','soon'].includes(timing)) warnings.push(['warn','Laufende oder bevorstehende Aktivität wird mit einem zusätzlichen KH-Puffer berücksichtigt.']);
   if(activity==='NONE') warnings.push(['warn','Es wurde keine Aktivitätsanpassung gewählt: weder Bolusreduktion noch Aktivitätspuffer werden angewendet.']);
   if(fpeManual&&fat===0&&protein===0&&directFpe>0) warnings.push(['warn','Bei direkter FPE-Eingabe ohne Fett/Protein bleibt die zeitliche Einstufung eine grobe Schätzung.']);
@@ -1306,12 +1524,13 @@ function resetInputs(){
   $('directFpe').value='0.0'; mealLevelManual=false; fpeManual=false; $('mealLevelState').textContent='Automatisch aus Fett und Protein berechnet.';
   $('glucose').value=currentUnit==='mgdl'?'108':'6.0';
   $('target').value=$('defaultTarget').value;
-  $('isf').value=$('defaultIsf').value;
-  $('isfSource').textContent='App-Standard; manuell änderbar.';
+  applyAppStandardIsf();
+  applyAppStandardCarbRatio();
   $('sickMode').checked=false;
   $('sickCurrentIncrease').value=n('sickIncrease');
   $('sickNotice').hidden=true;
   updateSickIncreaseInfo();
+  setProposalManualState(false);
   $('trend').value='stable'; $('activity').value=getStoredSettings().defaultActivity || 'A0'; $('mealLevel').value='L2';
 $('timing').value='none'; $('resultCard').hidden=true;
 }
@@ -1503,6 +1722,11 @@ function scheduleValue(schedule){
   }
   return parseNumberLoose(selected.value??selected.amount??selected);
 }
+function normalizedSchedule(schedule,divisor=1){
+  if(Number.isFinite(Number(schedule))) return Number(schedule)/divisor;
+  if(!Array.isArray(schedule)) return schedule;
+  return schedule.map(item=>({...item,value:parseNumberLoose(item.value??item.amount??item)/divisor}));
+}
 function profileValues(data){
   const normalized=normalizeProfileResponse(data);
   if(!normalized) return null;
@@ -1512,8 +1736,14 @@ function profileValues(data){
   if(sens!=null&&units.includes('mg')) sens/=18;
   const dia=parseNumberLoose(p.dia??p.insulinDuration??p.insulin_duration);
   const carbsHr=parseNumberLoose(p.carbs_hr??p.carbsHr??p.carbAbsorptionRate);
-  const carbRatio=scheduleValue(p.carbratio??p.carb_ratio??p.ic);
-  return {name:normalized.name,sensMmol:sens,dia,carbsHr,carbRatio,units};
+  const carbSchedule=p.carbratio??p.carb_ratio??p.ic;
+  const sensSchedule=p.sens??p.isf??p.sensitivity;
+  const targetLowSchedule=p.target_low??p.targetLow;
+  const targetHighSchedule=p.target_high??p.targetHigh;
+  const carbRatio=scheduleValue(carbSchedule);
+  let targetLow=scheduleValue(targetLowSchedule),targetHigh=scheduleValue(targetHighSchedule);
+  if(units.includes('mg')){ if(targetLow!=null) targetLow/=18; if(targetHigh!=null) targetHigh/=18; }
+  return {name:normalized.name,sensMmol:sens,dia,carbsHr,carbRatio,targetLow,targetHigh,units,schedules:{sens:normalizedSchedule(sensSchedule,units.includes('mg')?18:1),carbratio:normalizedSchedule(carbSchedule,1),target_low:normalizedSchedule(targetLowSchedule,units.includes('mg')?18:1),target_high:normalizedSchedule(targetHighSchedule,units.includes('mg')?18:1),units:'mmol/l',dia,carbs_hr:carbsHr}};
 }
 function treatmentTime(t){
   const raw=t.mills??t.date??t.created_at??t.timestamp??t.eventTime;
@@ -1554,7 +1784,71 @@ function approximateCob(treatments,carbsHr){
   return found?Math.max(0,total):0;
 }
 function dataAgeText(mins){
-  return mins===1?'1 Minute alt':`${mins} Minuten alt`;
+  const rounded=Math.max(0,Math.floor(mins));
+  if(rounded<=0) return 'gerade eben';
+  return rounded===1?'1 Minute alt':`${rounded} Minuten alt`;
+}
+function minutesSince(timestamp){
+  return timestamp?Math.max(0,(Date.now()-timestamp)/60000):null;
+}
+function updateLiveAgeLabels(){
+  const entryAge=minutesSince(latestNightscoutMeta.entryTimestamp);
+  const fetchAge=minutesSince(lastNightscoutFetchAt);
+  if(entryAge!=null){
+    const age=dataAgeText(entryAge);
+    $('glucoseAge').textContent=`Nightscout, ${age}`;
+    $('trendSource').textContent=latestNightscoutMeta.calculatedTrend
+      ? `Nightscout, ${age} · ${latestNightscoutMeta.calculatedTrend.per5>=0?'+':''}${latestNightscoutMeta.calculatedTrend.per5.toFixed(2)} mmol/l je 5 Min.`
+      : `Nightscout, ${age}`;
+    setNsStatus(`${$('glucose').value} ${unitText()}, ${age}`,'good');
+  }
+  if(fetchAge!=null){
+    const age=dataAgeText(fetchAge);
+    if(latestNightscoutMeta.iobAvailable) $('iobSource').textContent=`Nightscout, ${age}`;
+    if(latestNightscoutMeta.cobAvailable) $('cobSource').textContent=`Nightscout, ${age}`;
+  }
+
+  const profileAge=minutesSince(latestNightscoutMeta.profileTimestamp);
+  if(profileAge!=null){
+    const age=dataAgeText(profileAge);
+    if(isfSourceMode==='nightscout') $('isfSource').textContent=`Nightscout-Profil, ${age}`;
+    if(carbRatioSourceMode==='nightscout') $('carbRatioSource').textContent=`Nightscout-Profil, ${age}`;
+  }
+}
+function nightscoutDataAgeMinutes(){
+  return minutesSince(lastNightscoutFetchAt);
+}
+function shouldAutoRefresh(){
+  const cfg=cleanNightscoutConfig();
+  return document.visibilityState==='visible'
+    && navigator.onLine!==false
+    && cfg.url && cfg.token
+    && $('nightscoutAuto').checked;
+}
+async function refreshWhenStale(maxAgeMinutes=1.5){
+  const age=nightscoutDataAgeMinutes();
+  if(shouldAutoRefresh() && (age==null || age>=maxAgeMinutes)){
+    await loadNightscoutData(false);
+  }
+}
+function startLiveNightscoutUpdates(){
+  setInterval(updateLiveAgeLabels,15000);
+  setInterval(()=>refreshWhenStale(0.9),60000);
+  document.addEventListener('visibilitychange',()=>{
+    updateLiveAgeLabels();
+    if(document.visibilityState==='visible') refreshWhenStale(1.5);
+  });
+}
+async function calculateWithFreshnessCheck(){
+  const cfg=cleanNightscoutConfig();
+  const age=nightscoutDataAgeMinutes();
+  if(cfg.url && cfg.token && age!=null && age>3){
+    const updateFirst=confirm(
+      `Die geladenen Nightscout-Daten sind ${dataAgeText(age)}.\n\nOK = vor der Berechnung aktualisieren\nAbbrechen = trotzdem mit den vorhandenen Werten rechnen`
+    );
+    if(updateFirst) await loadNightscoutData(false);
+  }
+  calculate();
 }
 
 async function fetchJson(url){
@@ -1675,12 +1969,29 @@ async function loadNightscoutData(showAlert=true){
       setNsStatus('Glukosewert und Trend geladen','good');
     }
 
-    const profile=profileResult.status==='fulfilled'?profileValues(profileResult.value):null;
-    if(profile?.sensMmol>0){
+    let profile=profileResult.status==='fulfilled'?profileValues(profileResult.value):null;
+    if(!(profile?.sensMmol>0)){
+      await sleep(1500);
+      try{
+        profile=profileValues(await fetchJson(urls.profile));
+      }catch(err){}
+    }
+    if($('forceAppIsf').checked){
+      applyAppStandardIsf('App-Standard statt Nightscout aktiviert.');
+    }else if(profile?.sensMmol>0){
       $('isf').value=currentUnit==='mgdl'?Math.round(profile.sensMmol*18):profile.sensMmol.toFixed(1);
-      $('isfSource').textContent='Aus aktuellem Nightscout-Profil';
+      isfSourceMode='nightscout';
     }else{
-      $('isfSource').textContent='Nicht aus Nightscout verfügbar – bitte manuell prüfen.';
+      applyAppStandardIsf('Nightscout-ISF nicht verfügbar – App-Standard verwendet.');
+    }
+
+    if($('forceAppCarbRatio').checked){
+      applyAppStandardCarbRatio('App-Standard statt Nightscout aktiviert.');
+    }else if(profile?.carbRatio>0){
+      $('carbRatioCurrent').value=Number(profile.carbRatio).toFixed(1).replace(/\.0$/,'');
+      carbRatioSourceMode='nightscout';
+    }else{
+      applyAppStandardCarbRatio('Nightscout-KH-Faktor nicht verfügbar – App-Standard verwendet.');
     }
 
     const properties=propertyResult.status==='fulfilled'?propertyResult.value:null;
@@ -1712,13 +2023,22 @@ async function loadNightscoutData(showAlert=true){
       $('cobSource').textContent='Nicht verfügbar – bei Bedarf manuell eingeben.';
     }
 
-    latestNightscoutMeta={profile,iobMethod,cobMethod,mins,trend:mappedTrend,nightscoutTrend,calculatedTrend,trendDisagreement};
+    lastNightscoutFetchAt=Date.now();
+    latestNightscoutMeta={
+      profile,iobMethod,cobMethod,mins,trend:mappedTrend,nightscoutTrend,calculatedTrend,trendDisagreement,
+      entryTimestamp:t?t.getTime():lastNightscoutFetchAt,
+      profileTimestamp:lastNightscoutFetchAt,
+      iobAvailable:iobFound!=null,
+      cobAvailable:cobFound!=null
+    };
     proposeNetIobCob();
+    updateLiveAgeLabels();
     const profileParts=[];
     if(profile?.sensMmol) profileParts.push(`ISF ${profile.sensMmol.toFixed(1)} mmol/l je IE`);
     if(profile?.dia) profileParts.push(`DIA ${profile.dia} h`);
     if(profile?.carbsHr) profileParts.push(`KH-Absorption ${profile.carbsHr} g/h`);
     if(profile?.carbRatio) profileParts.push(`KH-Faktor ${profile.carbRatio} g/IE`);
+    if(profile?.targetLow!=null&&profile?.targetHigh!=null) profileParts.push(`Ziel ${profile.targetLow.toFixed(1)}–${profile.targetHigh.toFixed(1)} mmol/l`);
     if(profileParts.length){
       $('nightscoutProfileInfo').hidden=false;
       const lines=[];
@@ -1727,6 +2047,7 @@ async function loadNightscoutData(showAlert=true){
       if(profile?.dia) lines.push(`<strong>Insulinwirkdauer/DIA:</strong> ${profile.dia} Stunden`);
       if(profile?.carbsHr) lines.push(`<strong>KH-Absorption:</strong> ${profile.carbsHr} g pro Stunde`);
       if(profile?.carbRatio) lines.push(`<strong>KH-Faktor:</strong> ${profile.carbRatio} g pro IE`);
+      if(profile?.targetLow!=null&&profile?.targetHigh!=null) lines.push(`<strong>Zielbereich:</strong> ${profile.targetLow.toFixed(1)}–${profile.targetHigh.toFixed(1)} mmol/l`);
       $('nightscoutProfileInfo').innerHTML=lines.join('<br>');
     }else{
       $('nightscoutProfileInfo').hidden=true;
@@ -1756,151 +2077,6 @@ KH-Absorption: ${profile?.carbsHr?profile.carbsHr+' g/h':'nicht gefunden'}`
   }
 }
 
-
-function compactObjectDiff(current,base){
-  const out={};
-  for(const [k,v] of Object.entries(current||{})){
-    if(JSON.stringify(v)!==JSON.stringify(base?.[k])) out[k]=v;
-  }
-  return out;
-}
-const QR_SETTING_KEYS={
-  glucoseUnit:'u',targetMmol:'t',defaultIsfMmol:'di',carbRatio:'cr',fpeRatio:'fr',rounding:'r',carbRounding:'gr',
-  hypoMinimum:'hm',a0:'a0',a1:'a1',a2:'a2',a3:'a3',am1Increase:'am',
-  bufferA0:'b0',bufferA1:'b1',bufferA2:'b2',bufferA3:'b3',
-  splitL1:'s1',splitL2:'s2',splitL3:'s3',splitL4:'s4',
-  showManualAdjust:'ma',nightscoutUrl:'nu',nightscoutToken:'nt',nightscoutAuto:'na',
-  defaultActivity:'da',sickIncrease:'si'
-};
-function compactSettings(settings){
-  const diff=compactObjectDiff(settings,defaults);
-  const out={};
-  for(const [k,v] of Object.entries(diff)) out[QR_SETTING_KEYS[k]||k]=v;
-  return out;
-}
-function expandSettings(compact){
-  const reverse=Object.fromEntries(Object.entries(QR_SETTING_KEYS).map(([k,v])=>[v,k]));
-  const out={...defaults};
-  for(const [k,v] of Object.entries(compact||{})) out[reverse[k]||k]=v;
-  return out;
-}
-function compactHelpers(list){
-  return (list||[]).map(h=>[h.name,h.unit,h.carbs,h.parts,h.speed]);
-}
-function expandHelpers(list){
-  return (list||[]).map(a=>({name:a[0],unit:a[1],carbs:a[2],parts:a[3],speed:a[4]}));
-}
-function lzwCompress(input){
-  const dict=new Map(),data=[...input],out=[];
-  let phrase=data[0]||'',code=256;
-  for(let i=1;i<data.length;i++){
-    const curr=data[i],combo=phrase+curr;
-    if(dict.has(combo)) phrase=combo;
-    else{out.push(phrase.length>1?dict.get(phrase):phrase.charCodeAt(0));dict.set(combo,code++);phrase=curr;}
-  }
-  if(phrase) out.push(phrase.length>1?dict.get(phrase):phrase.charCodeAt(0));
-  return out.map(n=>String.fromCharCode(n)).join('');
-}
-function lzwDecompress(input){
-  if(!input) return '';
-  const dict=new Map(),data=[...input].map(c=>c.charCodeAt(0));
-  let curr=String.fromCharCode(data[0]),old=curr,out=[curr],code=256;
-  for(let i=1;i<data.length;i++){
-    const n=data[i];
-    const phrase=n<256?String.fromCharCode(n):(dict.get(n)??(old+curr));
-    out.push(phrase);
-    curr=phrase.charAt(0);
-    dict.set(code++,old+curr);
-    old=phrase;
-  }
-  return out.join('');
-}
-function buildTransferPayload(includeToken=false){
-  syncHelpersFromEditor();
-  const settings=collectSettings();
-  if(!includeToken) settings.nightscoutToken='';
-  return {f:'bq2',v:APP_VERSION,s:compactSettings(settings),h:compactHelpers(helpers)};
-}
-function encodeQrPayload(payload){
-  const json=JSON.stringify(payload);
-  const compressed=lzwCompress(json);
-  return 'BQ2:'+btoa(unescape(encodeURIComponent(compressed)));
-}
-function decodeQrPayload(text){
-  if(text.startsWith('BQ2:')){
-    const compressed=decodeURIComponent(escape(atob(text.slice(4))));
-    const compact=JSON.parse(lzwDecompress(compressed));
-    return {format:'bolusrechner-settings',version:compact.v,settings:expandSettings(compact.s),helpers:expandHelpers(compact.h)};
-  }
-  if(text.startsWith('BOLUSQR1:')){
-    const json=decodeURIComponent(escape(atob(text.slice(9))));
-    const compact=JSON.parse(json);
-    return {format:compact.f,version:compact.v,settings:compact.s,helpers:compact.h};
-  }
-  throw new Error('Kein Bolusrechner-QR-Code');
-}
-function applyImportedPayload(data){
-  if(data.format!=='bolusrechner-settings') throw new Error('Unbekanntes Format');
-  const imported={...defaults,...(data.settings||{})};
-  const currentToken=getStoredSettings().nightscoutToken||'';
-  if(!imported.nightscoutToken) imported.nightscoutToken=currentToken;
-  localStorage.setItem('bolusSettingsV010',JSON.stringify(imported));
-  if(Array.isArray(data.helpers)){
-    helpers=data.helpers;
-    localStorage.setItem('bolusHelpersV010',JSON.stringify(helpers));
-  }
-  applySettings(imported);
-  renderHelperEditor();
-}
-function showQrExport(){
-  if(typeof qrcode!=='function'){
-    alert('QR-Bibliothek noch nicht geladen. Bitte kurz online bleiben und erneut versuchen.');
-    return;
-  }
-  try{
-    const payload=buildTransferPayload($('qrIncludeToken').checked);
-    const encoded=encodeQrPayload(payload);
-    const qr=qrcode(0,'L');
-    qr.addData(encoded);
-    qr.make();
-    $('qrModalTitle').textContent='Einstellungen als QR-Code';
-    $('qrContent').innerHTML=`<div class="qr-panel">${qr.createImgTag(5,12)}<p class="hint">Diesen Code auf dem anderen Gerät über „QR-Code einlesen“ erfassen.</p></div>`;
-    $('qrModal').hidden=false;
-  }catch(err){
-    alert('QR-Code konnte nicht erstellt werden: '+err.message);
-  }
-}
-function scanQrImage(file){
-  if(typeof jsQR!=='function'){
-    alert('QR-Lesebibliothek noch nicht geladen. Bitte kurz online bleiben und erneut versuchen.');
-    return;
-  }
-  const img=new Image();
-  img.onload=()=>{
-    try{
-      const canvas=document.createElement('canvas');
-      const max=1800,scale=Math.min(1,max/Math.max(img.width,img.height));
-      canvas.width=Math.round(img.width*scale); canvas.height=Math.round(img.height*scale);
-      const ctx=canvas.getContext('2d',{willReadFrequently:true});
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-      const code=jsQR(data.data,data.width,data.height,{inversionAttempts:'attemptBoth'});
-      if(!code) throw new Error('Kein lesbarer QR-Code gefunden');
-      const payload=decodeQrPayload(code.data);
-      const summary=`Version ${payload.version||'?'} · ${Array.isArray(payload.helpers)?payload.helpers.length:0} KH-Helfer · Nightscout-Token ${payload.settings?.nightscoutToken?'enthalten':'nicht enthalten'}`;
-      if(confirm(`Einstellungen importieren?\n${summary}\n\nVorhandene Einstellungen werden ersetzt.`)){
-        applyImportedPayload(payload);
-        alert('QR-Einstellungen wurden importiert.');
-      }
-    }catch(err){
-      alert('QR-Import fehlgeschlagen: '+err.message);
-    }finally{
-      URL.revokeObjectURL(img.src);
-    }
-  };
-  img.onerror=()=>alert('Bild konnte nicht geöffnet werden.');
-  img.src=URL.createObjectURL(file);
-}
 
 function setupUpdates(){
   if(!('serviceWorker' in navigator)) return;
@@ -1942,17 +2118,109 @@ $('mealLevel').addEventListener('change',()=>{
   mealLevelManual=true;
   $('mealLevelState').textContent='Manuell ausgewählt.';
 });
-$('exportQr').addEventListener('click',showQrExport);
-$('importQr').addEventListener('click',()=>$('qrImageFile').click());
-$('qrImageFile').addEventListener('change',e=>{
-  if(e.target.files[0]) scanQrImage(e.target.files[0]);
-  e.target.value='';
-});
-$('closeQrModal').addEventListener('click',()=>$('qrModal').hidden=true);
-$('closeQrModalX').addEventListener('click',()=>$('qrModal').hidden=true);
-$('qrModal').addEventListener('click',e=>{ if(e.target===$('qrModal')) $('qrModal').hidden=true; });
 
 
+
+const RESULT_INFO={
+  baseBolus:'Mahlzeiten-KH geteilt durch den aktuell verwendeten KH-Faktor. Dieser Ausgangswert wird anschließend durch Aktivität, Korrektur, IOB und weitere Faktoren verändert.',
+  activity:'Die gewählte Aktivitätsstufe verändert den Mahlzeitenbolus prozentual. Das Modell zielt vor allem auf aerobe, meist glukosesenkende Aktivität. Sehr intensives Kraft- oder Intervalltraining kann zunächst auch stabilisieren oder erhöhen.',
+  manual:'Eine optionale zusätzliche prozentuale Feinanpassung. Sie sollte nur aufgrund eigener dokumentierter Erfahrung verwendet werden.',
+  correction:'Differenz zwischen aktuellem Glukosewert und Zielwert, geteilt durch den Korrekturfaktor. Fallender Trend und IOB müssen bei der praktischen Entscheidung zusätzlich berücksichtigt werden.',
+  iob:'Der von dir eingeschätzte Anteil des vorhandenen Insulins, der noch glukosesenkend wirkt. Er wird vom rechnerischen Bedarf abgezogen.',
+  activeCarbs:'Noch wirksame Kohlenhydrate werden in ein Insulinäquivalent umgerechnet und dem Bedarf zugerechnet. Die aktuelle Mahlzeit darf hier nicht doppelt erfasst werden.',
+  buffer:'Zusätzliche KH werden nur vorgeschlagen, wenn die Nettorechnung ohnehin einen KH-Ausgleich ergibt. Höhe und Zeitpunkt hängen von Aktivitätslevel, Aktivitätszeitpunkt und Trend ab.',
+  fpe:'Fett-Protein-Einheiten werden aus Fett und Protein geschätzt. Ein möglicher später Insulinbedarf wird nicht automatisch zum Sofortbolus addiert; vor einer Spätdosis Glukose, Trend, IOB und tatsächliche Mahlzeitenwirkung erneut prüfen.'
+};
+function openActivityInfo(){
+  $('appModalTitle').textContent='Aktivitätslevel auswählen';
+  $('appModalContent').innerHTML=`<div class="help-card"><p>Die Stufen sind vor allem für aerobe, gewöhnlich glukosesenkende Bewegung gedacht. Intensives anaerobes Training oder Krafttraining kann anfangs auch stabilisieren oder erhöhen. „Anstrengender“ bedeutet deshalb nicht automatisch „mehr reduzieren“. Dauer, Zeitpunkt, IOB, Startwert, Trend und deine persönliche Reaktion bleiben entscheidend.</p></div>
+  <div class="help-card"><p><strong>A−1:</strong> deutlich weniger Bewegung als üblich, überwiegend sitzend, keine längeren Spaziergänge.</p><p><strong>A0:</strong> persönlicher neutraler Referenztag.</p><p><strong>A1:</strong> etwa 45–60 Minuten zügiges Gehen oder ein längerer Spaziergang; Puls etwas erhöht, Unterhaltung weiter möglich.</p><p><strong>A2:</strong> etwa 60–120 Minuten klar aktive Bewegung oder mehrere längere Aktivitäten, zum Beispiel langer Spaziergang plus Radfahren oder Schwimmen.</p><p><strong>A3:</strong> mehrere Stunden ungewöhnlich hohe Gesamtaktivität, etwa lange Wanderung, Radtour oder mehrere größere Aktivitäten.</p></div>`;
+  $('appModal').hidden=false;
+}
+
+let settingsBaseline=''; let dirtyBarDismissed=false;
+function settingsSnapshot(){ try{return JSON.stringify(collectSettings());}catch(e){return '';} }
+function markSettingsSaved(){ settingsBaseline=settingsSnapshot(); dirtyBarDismissed=false; $('settingsDirtyBar').hidden=true; }
+function updateDirtyState(){
+  if(!settingsBaseline) return;
+  const dirty=settingsSnapshot()!==settingsBaseline;
+  if(!dirty){ dirtyBarDismissed=false; $('settingsDirtyBar').hidden=true; return; }
+  if(!dirtyBarDismissed) $('settingsDirtyBar').hidden=false;
+}
+function installDirtyTracking(){
+  document.querySelectorAll('#settingsDetails input,#settingsDetails select').forEach(el=>{
+    if(['jsonIncludeToken'].includes(el.id)) return;
+    el.addEventListener('input',()=>{dirtyBarDismissed=false;updateDirtyState();});
+    el.addEventListener('change',()=>{dirtyBarDismissed=false;updateDirtyState();});
+  });
+  window.addEventListener('beforeunload',e=>{ if(settingsBaseline && settingsSnapshot()!==settingsBaseline){e.preventDefault();e.returnValue='';} });
+}
+
+function setupBackButton(target){return `<button type="button" class="secondary" data-setup-back>Zurück</button>`;}
+function setupStepWelcome(){
+  $('setupContent').innerHTML=`<div class="setup-progress">Einrichtung 1 von 4</div><h2>Willkommen beim Bolusrechner</h2><p>Die App arbeitet lokal und benötigt deine persönlichen Einstellungen. Bestehende Nutzer können zuerst eine Sicherungsdatei importieren.</p><div class="notice warn">${SAFETY_TEXT}</div><div class="setup-actions"><button id="setupStart" class="primary">Einrichtung starten</button></div>`;
+  $('setupStart').onclick=setupStepImport;
+}
+function setupStepImport(){
+  $('setupContent').innerHTML=`<div class="setup-progress">Einrichtung 2 von 4</div><h2>Vorhandene Daten importieren</h2><p>Hast du bereits eine JSON-Sicherung des Bolusrechners? Die App prüft Versionsstand und fehlende neuere Einstellungen.</p><input id="setupImportFile" type="file" accept="application/json,.json"><div id="setupImportReport"></div><div class="setup-actions">${setupBackButton()}<button id="setupImportNext" class="primary">Datei importieren</button><button id="setupImportSkip" class="secondary">Ohne Import fortfahren</button></div>`;
+  document.querySelector('[data-setup-back]').onclick=setupStepWelcome;
+  $('setupImportNext').onclick=async()=>{ const f=$('setupImportFile').files[0]; if(!f){alert('Bitte zuerst eine JSON-Datei auswählen.');return;} try{ const r=await importDataFile(f,{setup:true,silent:true}); $('setupImportReport').innerHTML=`<div class="notice ok">Sicherung aus Version ${r.version} importiert. ${r.missing.length?'Folgende neuere Einstellungen wurden mit aktuellen Standards ergänzt: '+r.missing.join(', '):'Alle aktuell erforderlichen Werte waren vorhanden.'} Prüfe neue Funktionen und Einstellungen trotzdem kurz.</div>`; setTimeout(()=>setupStepNightscout(r),350);}catch(e){alert('Import fehlgeschlagen: '+e.message);} };
+  $('setupImportSkip').onclick=()=>setupStepNightscout(null);
+}
+async function fetchCurrentNsProfileForSetup(){
+  const cfg=cleanNightscoutConfig(); if(!cfg.url||!cfg.token) throw new Error('URL und Read-only-Token fehlen.');
+  const raw=await fetchJson(apiUrl(cfg.url,'/api/v1/profile.json',cfg.token));
+  return profileValues(raw);
+}
+function setupTokenInfoButton(){return `<button type="button" class="info-button" data-setup-token-info aria-label="Read-only-Token erklären">i</button>`;}
+function setupStepNightscout(importReport){
+  const st=getStoredSettings();
+  $('setupContent').innerHTML=`<div class="setup-progress">Einrichtung 3 von 4</div><h2>Nightscout verbinden</h2><p>Nightscout ist der bevorzugte Weg, aktuelle Profilwerte und vollständige Zeitpläne zu übernehmen. Ein importierter Zugang wurde vorausgefüllt.</p><label>Nightscout-URL</label><input id="setupNsUrl" type="url" value="${(st.nightscoutUrl||'').replaceAll('"','&quot;')}"><div class="setup-label-row"><label>Read-only-Token mit Rolle readable</label>${setupTokenInfoButton()}</div><input id="setupNsToken" type="password" value="${(st.nightscoutToken||'').replaceAll('"','&quot;')}"><div class="notice warn token-warning">Nur ein Read-only-Token mit Rolle <strong>readable</strong> wird akzeptiert. Nicht API_SECRET, Login-Code oder offenen Zugriff verwenden.</div><div id="setupNsResult"></div><div class="setup-actions">${setupBackButton()}<button id="setupNsConnect" class="primary">Verbinden und vergleichen</button><button id="setupNsSkip" class="secondary">Ohne Nightscout fortfahren</button></div>`;
+  document.querySelector('[data-setup-back]').onclick=setupStepImport;
+  document.querySelector('[data-setup-token-info]').onclick=()=>{$('appModal').style.zIndex='70';openSettingInfo('nightscoutToken');};
+  $('setupNsSkip').onclick=()=>setupStepManual();
+  $('setupNsConnect').onclick=async()=>{
+    $('nightscoutUrl').value=$('setupNsUrl').value.trim(); $('nightscoutToken').value=$('setupNsToken').value.trim();
+    try{
+      const prof=await fetchCurrentNsProfileForSetup(),local=getStoredSettings(),differences=[];
+      const appSchedules=local.localProfileSchedules||{carbratio:[{time:'00:00',value:local.carbRatio||10}],sens:[{time:'00:00',value:local.defaultIsfMmol||2}]};
+      if(JSON.stringify(scheduleRows(prof?.schedules?.carbratio,10))!==JSON.stringify(scheduleRows(appSchedules.carbratio,local.carbRatio||10))) differences.push({key:'carbratio',label:'KH-Faktor-Zeitplan',app:appSchedules.carbratio,ns:prof.schedules.carbratio,kind:'schedule'});
+      if(JSON.stringify(scheduleRows(prof?.schedules?.sens,2))!==JSON.stringify(scheduleRows(appSchedules.sens,local.defaultIsfMmol||2))) differences.push({key:'sens',label:'Korrekturfaktor-Zeitplan',app:appSchedules.sens,ns:prof.schedules.sens,kind:'schedule'});
+      const localTarget=local.targetMmol||6,nsTarget=(prof?.targetLow!=null&&prof?.targetHigh!=null)?(prof.targetLow+prof.targetHigh)/2:null;
+      if(nsTarget!=null&&Math.abs(nsTarget-localTarget)>0.01) differences.push({key:'targetMmol',label:'Rechen-Zielwert (Mitte des Nightscout-Zielbereichs)',app:localTarget,ns:Number(nsTarget.toFixed(2)),kind:'number'});
+      renderSetupComparison(prof,differences);
+    }catch(e){$('setupNsResult').innerHTML=`<div class="notice danger">Verbindung fehlgeschlagen: ${e.message}</div>`;}
+  };
+}
+function renderSetupComparison(profile,diffs){
+  if(!diffs.length){const st=getStoredSettings();st.nightscoutUrl=$('setupNsUrl').value.trim();st.nightscoutToken=$('setupNsToken').value.trim();if(profile?.schedules)st.localProfileSchedules=profile.schedules;st.settingsSchemaVersion=2;localStorage.setItem('bolusSettingsV010',JSON.stringify(st));$('setupNsResult').innerHTML='<div class="notice ok">Die aktuellen Nightscout-Profilwerte und Zeitpläne stimmen mit den importierten beziehungsweise lokalen App-Werten überein. Der vollständige Profil-Zeitplan wurde lokal als Offline-Fallback gespeichert.</div><div class="setup-actions"><button id="finishMatchingSetup" class="primary">Werte prüfen</button></div>';$('finishMatchingSetup').onclick=()=>setupStepManual();return;}
+  $('setupNsResult').innerHTML=`<div class="notice warn">Nightscout und App enthalten unterschiedliche Werte oder Zeitpläne. Wähle pro Bereich, welche Einstellung gelten soll.</div>`+diffs.map((d,i)=>`<div class="compare-row"><strong>${d.label}</strong><div class="compare-grid"><div class="compare-value"><strong>App</strong><br>${d.kind==='schedule'?formatSchedule(d.app,d.key):d.app}</div><div class="compare-value"><strong>Nightscout</strong><br>${d.kind==='schedule'?formatSchedule(d.ns,d.key):d.ns}</div></div><select data-compare="${i}"><option value="ns">Nightscout übernehmen</option><option value="app">App-Wert behalten</option>${d.kind==='number'?'<option value="edit">Wert bearbeiten</option>':''}</select>${d.kind==='number'?`<input data-edit="${i}" type="number" step="0.1" value="${d.ns}" hidden>`:''}</div>`).join('')+`<div class="setup-actions"><button id="acceptComparison" class="primary">Auswahl übernehmen</button><button id="allNs" class="secondary">Alle Nightscout-Werte</button><button id="allApp" class="secondary">Alle App-Werte</button></div>`;
+  document.querySelectorAll('[data-compare]').forEach(sel=>sel.onchange=()=>{const edit=document.querySelector(`[data-edit="${sel.dataset.compare}"]`);if(edit)edit.hidden=sel.value!=='edit';});
+  $('allNs').onclick=()=>document.querySelectorAll('[data-compare]').forEach(x=>x.value='ns');$('allApp').onclick=()=>document.querySelectorAll('[data-compare]').forEach(x=>x.value='app');
+  $('acceptComparison').onclick=()=>{const st=getStoredSettings(),sch={...(st.localProfileSchedules||{}),units:'mmol/l'};diffs.forEach((d,i)=>{const choice=document.querySelector(`[data-compare="${i}"]`).value;if(d.kind==='schedule')sch[d.key]=choice==='ns'?d.ns:d.app;else st[d.key]=choice==='ns'?d.ns:choice==='edit'?Number(document.querySelector(`[data-edit="${i}"]`).value):d.app;});st.localProfileSchedules={...(profile?.schedules||{}),...sch};st.nightscoutUrl=$('setupNsUrl').value.trim();st.nightscoutToken=$('setupNsToken').value.trim();st.settingsSchemaVersion=2;localStorage.setItem('bolusSettingsV010',JSON.stringify(st));applySettings(st);markSettingsSaved();setupStepManual();};
+}
+function setupStepManual(){
+  const st=getStoredSettings(),initialUnit=st.glucoseUnit||'mmol';
+  $('setupContent').innerHTML=`<div class="setup-progress">Einrichtung 4 von 4</div><h2>Grundwerte bestätigen</h2><p>Prüfe die persönlichen Grundwerte. Wenn du unsicher bist, wähle zunächst A0 als neutrales Basisprofil.</p><label>Glukoseeinheit</label><select id="setupUnit"><option value="mmol" ${initialUnit==='mmol'?'selected':''}>mmol/l</option><option value="mgdl" ${initialUnit==='mgdl'?'selected':''}>mg/dl</option></select><label id="setupTargetLabel" style="margin-top:8px"></label><input id="setupTarget" type="number"><label style="margin-top:8px">KH-Faktor (g/IE)</label><input id="setupRatio" type="number" step="0.5" value="${st.carbRatio||10}"><label id="setupIsfLabel" style="margin-top:8px"></label><input id="setupIsf" type="number"><label style="margin-top:8px">Insulin-Dosierschritt (IE)</label><input id="setupRounding" type="number" step="0.1" value="${st.rounding||0.5}"><div class="setup-label-row"><label>Standard-Aktivitätslevel</label><button id="setupActivityInfo" type="button" class="info-button">i</button></div><select id="setupActivity"><option value="AM1">A−1 – Sehr ruhiger Tag</option><option value="A0">A0 – Basisprofil</option><option value="A1">A1 – Aktiver Tag</option><option value="A2">A2 – Deutlich aktiver Tag</option><option value="A3">A3 – Außergewöhnlich aktiver Tag</option><option value="NONE">Keine Anpassung</option></select><div class="hint">Unsicher? Zunächst A0 als neutrales Basisprofil wählen. Ein anderes Level kann später als persönlicher Alltag voreingestellt werden.</div><div class="setup-actions">${setupBackButton()}<button id="saveManualSetup" class="primary">Werte speichern und abschließen</button></div>`;
+  let setupVals={mmol:{target:Number(st.targetMmol||6),isf:Number(st.defaultIsfMmol||2)},mgdl:{target:Number(st.targetMgdl||110),isf:Number(st.defaultIsfMgdl||40)}};
+  const renderUnit=unit=>{const mg=unit==='mgdl';$('setupTargetLabel').textContent=`Zielwert (${mg?'mg/dl':'mmol/l'})`;$('setupIsfLabel').textContent=`Korrekturfaktor (${mg?'mg/dl je IE':'mmol/l je IE'})`;$('setupTarget').step=mg?'1':'0.1';$('setupIsf').step=mg?'1':'0.1';$('setupTarget').value=mg?Math.round(setupVals.mgdl.target):setupVals.mmol.target.toFixed(1);$('setupIsf').value=mg?Math.round(setupVals.mgdl.isf):setupVals.mmol.isf.toFixed(1);};
+  renderUnit(initialUnit);$('setupActivity').value=st.defaultActivity||'A0';$('setupActivityInfo').onclick=()=>{$('appModal').style.zIndex='70';openActivityInfo();};document.querySelector('[data-setup-back]').onclick=()=>setupStepNightscout(null);
+  $('setupUnit').onchange=e=>{const old=e.target.value==='mgdl'?'mmol':'mgdl';setupVals[old]={target:Number($('setupTarget').value),isf:Number($('setupIsf').value)};renderUnit(e.target.value);};
+  $('saveManualSetup').onclick=()=>{const x=getStoredSettings(),unit=$('setupUnit').value;setupVals[unit]={target:Number($('setupTarget').value),isf:Number($('setupIsf').value)};x.glucoseUnit=unit;x.targetMmol=setupVals.mmol.target;x.targetMgdl=setupVals.mgdl.target;x.defaultIsfMmol=setupVals.mmol.isf;x.defaultIsfMgdl=setupVals.mgdl.isf;x.carbRatio=Number($('setupRatio').value);x.rounding=Number($('setupRounding').value);x.defaultActivity=$('setupActivity').value;x.settingsSchemaVersion=2;localStorage.setItem('bolusSettingsV010',JSON.stringify(x));applySettings(x);markSettingsSaved();finishSetup();};
+}
+function finishSetup(){localStorage.setItem('bolusSetupCompleted','true');localStorage.setItem('bolusLastReviewedVersion',APP_VERSION);$('setupModal').hidden=true;saveNightscoutSettings(false);if(cleanNightscoutConfig().url&&cleanNightscoutConfig().token)loadNightscoutData(false);}
+function maybeStartSetup(){if(localStorage.getItem('bolusSetupCompleted')!=='true'){$('setupModal').hidden=false;setupStepWelcome();}}
+function maybeShowUpdateReview(){
+  if(localStorage.getItem('bolusSetupCompleted')!=='true')return;
+  const stored=JSON.parse(localStorage.getItem('bolusSettingsV010')||'{}');
+  if(Number(stored.settingsSchemaVersion||0)>=2)return;
+  $('appModalTitle').textContent='Neue Einstellungen prüfen';
+  $('appModalContent').innerHTML=`<div class="notice warn"><strong>Neu in Version ${APP_VERSION}:</strong> KH- und Korrekturfaktoren können jetzt als vollständige Tageszeitpläne gespeichert werden. Bitte prüfe die übernommenen Werte.</div><div class="help-card"><p>Bestehende globale Werte bleiben erhalten und werden zunächst als Zeitraum ab 00:00 verwendet. Nightscout-Zeitpläne können vollständig geladen und anschließend bearbeitet werden.</p><button id="reviewNewSettings" class="primary">Jetzt prüfen</button><button id="reviewLater" class="secondary" style="margin-top:8px">Später</button></div>`;
+  $('appModal').hidden=false;
+  $('reviewNewSettings').onclick=()=>{$('appModal').hidden=true;$('settingsDetails').open=true;$('settingsSection').scrollIntoView({behavior:'smooth'});};
+  $('reviewLater').onclick=()=>$('appModal').hidden=true;
+}
+$('rerunSetupMenuItem').addEventListener('click',()=>{closeMenu();$('setupModal').hidden=false;setupStepWelcome();});
 $('menuButton').addEventListener('click',()=>{
   const open=$('menuPanel').hidden;
   $('menuPanel').hidden=!open;
@@ -1971,6 +2239,8 @@ document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener(
   }else if(view==='transfer'){
     $('settingsDetails').open=true;
     $('transferSection').scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(view==='install'){
+    handleInstallPwa();
   }else openAppModal(view);
 }));
 document.addEventListener('click',e=>{
@@ -1979,14 +2249,47 @@ document.addEventListener('click',e=>{
     $('menuButton').setAttribute('aria-expanded','false');
   }
 });
-$('closeAppModal').addEventListener('click',()=>$('appModal').hidden=true);
-$('closeAppModalX').addEventListener('click',()=>$('appModal').hidden=true);
-$('appModal').addEventListener('click',e=>{if(e.target===$('appModal')) $('appModal').hidden=true;});
+$('closeAppModal').addEventListener('click',()=>{$('appModal').hidden=true;$('appModal').style.zIndex='';});
+$('closeAppModalX').addEventListener('click',()=>{$('appModal').hidden=true;$('appModal').style.zIndex='';});
+$('appModal').addEventListener('click',e=>{if(e.target===$('appModal')){$('appModal').hidden=true;$('appModal').style.zIndex='';}});
 document.querySelectorAll('[data-setting-info]').forEach(btn=>btn.addEventListener('click',()=>openSettingInfo(btn.dataset.settingInfo)));
 $('showManualAdjust').addEventListener('change',updateManualAdjustVisibility);
+$('profileScheduleEditor')?.addEventListener('input',()=>{dirtyBarDismissed=false;updateSettingsDirtyState();});
 $('jsonIncludeToken').addEventListener('change',()=>{$('jsonTokenWarning').hidden=!$('jsonIncludeToken').checked;});
-['iob','cob','carbRatio'].forEach(id=>$(id).addEventListener('change',proposeNetIobCob));
+['iob','cob','carbRatioCurrent'].forEach(id=>$(id).addEventListener('change',()=>proposeNetIobCob(false)));
+['iobEffective','activeCarbs'].forEach(id=>$(id).addEventListener('input',()=>setProposalManualState(true)));
+$('refreshProposal').addEventListener('click',()=>proposeNetIobCob(true));
+$('isf').addEventListener('input',()=>{
+  isfSourceMode='manual';
+  $('isfSource').textContent='Manuell geändert.';
+});
+$('carbRatioCurrent').addEventListener('input',()=>{
+  carbRatioSourceMode='manual';
+  $('carbRatioSource').textContent='Manuell geändert.';
+  proposeNetIobCob(false);
+});
+$('forceAppIsf').addEventListener('change',()=>{
+  if($('forceAppIsf').checked) applyAppStandardIsf('App-Standard statt Nightscout aktiviert.');
+  else if(lastNightscoutFetchAt) loadNightscoutData(false);
+});
+$('forceAppCarbRatio').addEventListener('change',()=>{
+  if($('forceAppCarbRatio').checked) applyAppStandardCarbRatio('App-Standard statt Nightscout aktiviert.');
+  else if(lastNightscoutFetchAt) loadNightscoutData(false);
+});
+$('carbRatio').addEventListener('input',()=>{
+  if($('forceAppCarbRatio').checked || carbRatioSourceMode==='app') applyAppStandardCarbRatio();
+});
 
+
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  deferredInstallPrompt=event;
+  updateInstallMenuVisibility();
+});
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;
+  updateInstallMenuVisibility();
+});
 
 window.addEventListener('offline',()=>{
   if(cleanNightscoutConfig().url && cleanNightscoutConfig().token){
@@ -2000,6 +2303,11 @@ window.addEventListener('online',()=>{
   if(cleanNightscoutConfig().url && cleanNightscoutConfig().token) loadNightscoutData(false);
 });
 $('ketoneInfoButton').addEventListener('click',openKetoneInfo);
+$('activitySelectorInfo').addEventListener('click',openActivityInfo);
+document.querySelectorAll('[data-result-info]').forEach(btn=>btn.addEventListener('click',()=>openSimpleInfo('Berechnungsbestandteil',RESULT_INFO[btn.dataset.resultInfo]||'')));
+$('saveDirtySettings').addEventListener('click',()=>saveSettings());
+$('discardDirtySettings').addEventListener('click',()=>{applySettings(getStoredSettings());markSettingsSaved();});
+$('dismissDirtySettings').addEventListener('click',()=>{dirtyBarDismissed=true;$('settingsDirtyBar').hidden=true;});
 $('sickMode').addEventListener('change',()=>{
   if($('sickMode').checked && $('sickCurrentIncrease').value===''){
     $('sickCurrentIncrease').value=n('sickIncrease');
@@ -2011,7 +2319,7 @@ $('sickIncrease').addEventListener('input',()=>{
   if(!$('sickMode').checked) $('sickCurrentIncrease').value=$('sickIncrease').value;
 });
 
-$('calculate').addEventListener('click',calculate);
+$('calculate').addEventListener('click',calculateWithFreshnessCheck);
 $('reset').addEventListener('click',resetInputs);
 $('saveSettings').addEventListener('click',saveSettings);
 $('restoreSettings').addEventListener('click',restoreSettings);
@@ -2045,9 +2353,15 @@ installSelectOnFocus();
 installNextFieldNavigation();
 updateNightscoutActionState();
 updateSickIncreaseInfo();
+setProposalManualState(false);
+markSettingsSaved();
+installDirtyTracking();
+updateInstallMenuVisibility();
+startLiveNightscoutUpdates();
 setupUpdates();
 if($('nightscoutAuto').checked) setTimeout(()=>loadNightscoutData(false),250);
 else setNsStatus('automatisches Laden ist ausgeschaltet – Werte bitte manuell eingeben.');
+setTimeout(()=>{maybeStartSetup();setTimeout(maybeShowUpdateReview,350);},300);
 </script>
 </body>
 </html>

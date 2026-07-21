@@ -7,7 +7,7 @@
   "display": "standalone",
   "background_color": "#f3f4f6",
   "theme_color": "#0f172a",
-  "description": "Bolusrechner mit Nightscout, kompaktem QR-Transfer, Aktivitäts- und Krankheitsmodifikatoren sowie Offline-Nutzung.",
+  "description": "Bolusrechner mit Nightscout, Aktivitäts- und Krankheitsmodifikatoren, lokaler JSON-Sicherung und Offline-Nutzung.",
   "icons": [
     {
       "src": "icons/icon-192.png",

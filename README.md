@@ -1,164 +1,122 @@
 # Bolusrechner
 
-Lokale, installierbare Web-App zur transparenten Berechnung eines Mahlzeiten- und Korrektursaldos. Die App kann je nach Ergebnis einen Sofortbolus, einen geteilten Bolus, keinen zusätzlichen Bolus oder einen Kohlenhydratausgleich anzeigen.
+Lokale, installierbare Web-App zur transparenten Berechnung eines Mahlzeiten- und Korrektursaldos. Je nach Nettobilanz zeigt sie einen Sofortbolus, einen geteilten Bolus, keinen zusätzlichen Bolus oder einen Kohlenhydratausgleich an.
 
 Diese App ist ausschließlich eine Rechen- und Orientierungshilfe und ersetzt weder eine individuelle Therapieempfehlung noch die Beratung durch medizinisches Fachpersonal. Prüfe alle Eingaben, Berechnungen und vorgeschlagenen Insulin- oder Kohlenhydratmengen eigenverantwortlich und stimme Änderungen deiner Diabetesbehandlung mit deinem Diabetesteam ab. Spätdosen und Korrekturen dürfen nur unter Berücksichtigung von aktuellem Glukoseverlauf, Trend, IOB, Aktivität und der tatsächlichen Mahlzeitenwirkung beurteilt werden.
 
-## Versionsverlauf
+## App und Projekt
+
+- App: https://teute0815.github.io/bolusrechner/
+- Projekt und Quellcode: https://github.com/Teute0815/bolusrechner
+- Fehler und Funktionswünsche: https://github.com/Teute0815/bolusrechner/issues
+- Fragen und Austausch: https://github.com/Teute0815/bolusrechner/discussions
+
+GitHub-Beiträge sind öffentlich. Keine Gesundheitsdaten, Nightscout-Adressen, Tokens oder andere vertrauliche Informationen einstellen.
+
+## Als App / PWA installieren
+
+Der Bolusrechner kann im Browser verwendet oder als Progressive Web App installiert werden. Die installierte Variante besitzt ein eigenes App-Symbol, startet in einem eigenen Fenster, bleibt nach dem ersten vollständigen Laden offline nutzbar und prüft bei Internetverbindung auf Aktualisierungen.
+
+- **Android:** in Chrome oder Edge öffnen und „App installieren“ beziehungsweise „Zum Startbildschirm hinzufügen“ wählen.
+- **iPhone/iPad:** in Safari öffnen, „Teilen“ und anschließend „Zum Home-Bildschirm“ beziehungsweise „Als Web-App öffnen“ wählen.
+- **Desktop:** in Chrome oder Edge über das Browsermenü installieren. Die Webversion ist in praktisch allen aktuellen Browsern nutzbar; für die Installation als eigenständige App eignen sich Chrome oder Edge.
+
+Einstellungen, Nightscout-Zugangsdaten und persönliche KH-Helfer werden lokal im jeweiligen Browser beziehungsweise in der installierten PWA gespeichert. Für Geräte- oder Browserwechsel steht der JSON-Export zur Verfügung.
+
+## Version 0.14.2
+
+- geführte Ersteinrichtung mit Willkommen, JSON-Import, Nightscout-Verbindung und abschließender Prüfung persönlicher Grundwerte
+- Zurück-Navigation zwischen allen Einrichtungsschritten
+- einheitenabhängige Ziel- und Korrekturfaktorwerte im Einrichtungsdialog mit klarer Einheitenbeschriftung
+- Aktivitätsauswahl mit vollständiger Erklärung und A0 als neutralem Basisprofil
+- Import prüft Versionsmarker und ergänzt neuere fehlende Einstellungen
+- Nightscout-Abgleich vergleicht lokale Werte mit aktuellen Profilwerten
+- vollständige, sichtbare und bearbeitbare Tageszeitpläne für KH-Faktor und Korrekturfaktor
+- Zeiträume können hinzugefügt, geändert und gelöscht werden; jeweils aktuell gültiger Wert wird verwendet
+- Nightscout-Zeitpläne werden lokal als Offline-Fallback gespeichert
+- Hinweis bei App-Updates, wenn neue Einstellungen geprüft werden müssen
+- schwebende Erinnerung für ungespeicherte Standardeinstellungen mit Speichern, Verwerfen und Ausblenden
+- „Vorschlag aktualisieren“ nur nach manueller Änderung der IOB-/KH-Saldenwerte
+- überarbeitete Aktivitätsinformationen und Warnhinweise bei A2/A3
+- zusätzlicher Read-only-Token-Hinweis mit Erklärung der reinen Lesezugriffe
+- hervorgehobener FPE-Sicherheitshinweis in der Form „1 IE pro 1 FPE“
+- aktualisierte Hilfe, Eigenverantwortungshinweis, technische Angaben und Urheberschaft
+- Kontaktbereich mit Repository, Issues und Discussions
+- Datensicherung ausschließlich über JSON-Dateien
+- keine externen JavaScript-Frameworks oder Laufzeitbibliotheken
+
+## Frühere Hauptversionen
+
+### Version 0.13
+
+- sichtbarer aktueller KH-Faktor und Korrekturfaktor mit Quellenanzeige
+- Nightscout-Profilwerte werden für beide Faktoren verwendet
+- getrennte Optionen „Standard statt Nightscout verwenden“
+- lebende Altersangaben für Profil- und Glukosedaten
+
+### Version 0.12
+
+- automatischer Nightscout-Refresh und Aktualisierung bei Rückkehr in die App
+- Schutz manuell angepasster IOB-/KH-Nettowerte vor automatischem Überschreiben
+- PWA-Installationshilfe und Update-Erkennung
 
 ### Version 0.11
 
-- Standard-Korrekturfaktor unter „Aktuelle Situation“ ergänzt
-- Standardwert 2,0 mmol/l beziehungsweise 36 mg/dl je IE
-- Nightscout-Profilwert überschreibt bei erfolgreichem Abruf weiterhin den aktuellen Hauptwert
-- Ohne Nightscout wird der gespeicherte App-Standard verwendet
-- Einheitliches Info-System für nahezu alle fachlichen Einstellungen
-- Info-Pop-ups erklären Bedeutung, Einheit, Formel, Beispiele und Grenzen
-- KH-Rundung ausdrücklich als Aufrundung auf den nächsten Schritt dokumentiert
-- „Mindestmenge Ausgleichs-KH“ kürzer und verständlicher benannt
-- FPE-Standard für neue Installationen auf 1 FPE pro IE gesetzt
-- Mahlzeitenlevel als „Mahlzeitenlevel L1–L4 – Initialbolus“ beschriftet
-- Aktivitätseinstellungen nach Level paarweise geordnet
-- A−1 und A0 ohne sichtbaren Aktivitätspuffer
-- Einheitliche Bezeichnung „Bolusanpassung“
-- Aktivitätspuffer-Hilfe an die tatsächliche App-Formel angepasst
-- Krank-/Infekt-Zuschlag erscheint nur nach Aktivierung
-- Aktueller Krank-/Infekt-Zuschlag direkt in der Hauptmaske editierbar
-- Situative Änderung überschreibt den gespeicherten Standard nicht
-
-
-### Version 0.10.2
-
-- Direkt auf der funktionierenden Version 0.10 aufgebaut
-- Einrichten-Button öffnet den Nightscout-Bereich
-- URL und Read-only-Token sind beide erforderlich
-- Direkter Speichern-Button neben dem Nightscout-Test ist verdrahtet
-- Erfolgreicher Nightscout-Abruf speichert die Nightscout-Felder automatisch
-- Nightscout-Kernlogik aus Version 0.10 unverändert beibehalten
-- Bestehende KH-Helfer bieten ebenfalls „sehr schnell“
-- Bestehende Klassifizierungen bleiben erhalten
-- Sicherheitshinweis im Infofenster hat normale Infotextgröße
-- Krank-/Infekt-Modifikator zeigt den angewendeten Prozentwert
-
+- Standard-Korrekturfaktor, einheitliches Info-System und überarbeitete Aktivitäts-/Infekteinstellungen
+- FPE-Standard für neue Installationen auf 1 IE pro 1 FPE
 
 ### Version 0.10
 
-- QR-Code bleibt ein einzelner Code, wird aber durch Kurzschlüssel, Standardwert-Auslassung und Kompression verkleinert
-- Alle Pop-ups besitzen zusätzlich ein dauerhaft sichtbares X oben rechts
-- Gesamt-COB wird ohne den Zusatz „nur Information“ dargestellt
-- Warnhinweise unter IOB/COB und im Infofenster sind größer
-- KH-Helfer-Kategorie „sehr schnell“ ergänzt; „nachhaltiger“ bleibt bestehen
-- Standardhelfer „Apfel groß (200 g) – 29 g KH – halbierbar – schnell“
-- Versionsnummer im Header kleiner und optisch abgesetzt
-- Aktivitätslevel A−1 bis A3 neutral benannt
-- A−1 „Sehr ruhiger Tag“ mit vorsichtiger Standarderhöhung von 10 %
-- Persönliches Standard-Aktivitätslevel auswählbar
-- Separater Modifikator „Krank / Infekt“ mit editierbarem Standardzuschlag von 10 %
-- Ketone-Info mit vier Blutketon-Stufen und Handlungsorientierung
-- Nightscout-Status unterscheidet nicht eingerichtet, offline und Abruffehler
-- „Einrichten“-Button ersetzt Refresh, solange keine Nightscout-URL gespeichert ist
-- Nightscout-Profilinformationen werden zeilenweise dargestellt
-
+- erweiterte KH-Helfer, Aktivitätslevel A−1 bis A3, Krank-/Infekt-Modifikator und klarere Nightscout-Statusanzeigen
 
 ### Version 0.9
 
-- Mobile Weiter-Navigation überspringt Dropdown-Menüs
-- Noch senkendes IOB und noch wirksame KH stehen nebeneinander
-- Automatischer Rechenvorschlag aus Gesamt-IOB, Gesamt-COB und KH-Faktor
-- Beide Vorschlagswerte bleiben manuell überschreibbar
-- Read-only-Token-Hinweis direkt am Nightscout-Feld
-- Präzisere HTTP-401-Meldung mit Hinweis auf die Rolle readable
-- Nightscout-Token kann optional in den JSON-Export aufgenommen werden
-- Beim JSON-Import kann zwischen enthaltenem und vorhandenem Token gewählt werden
-- Einstellungen neu nach Nightscout, Aktuelle Situation, Mahlzeit, Aktivität und Allgemein gruppiert
-- Burger-Menü um Meine KH-Helfer und Import/Export ergänzt
-- Hilfe um KH-Helfer und Einstellungen erweitert
-- Jeder Hilfebereich besitzt eine ausführliche Mehr-Info-Ansicht
-- Header zeigt die aktuelle Versionsnummer
-
+- automatischer IOB-/COB-Nettovorschlag
+- optionaler Tokenexport in JSON
+- neu strukturierte Einstellungen und erweiterte Hilfe
 
 ### Version 0.8.1
 
-- Nightscout-Verbindungsaufbau korrigiert
-- Aktueller Glukosewert wird zuerst allein über den bewährten Zwei-Werte-Endpunkt geladen
-- Profil, IOB, COB und 20-Minuten-Historie werden erst nach erfolgreichem Glukoseabruf geladen
-- Zusatzabfragen können die Grundverbindung nicht mehr blockieren
-- Fehlermeldung zeigt den tatsächlichen Abruffehler genauer an
-
-### Version 0.8
-
-- Nightscout-Abruf für den aktuellen Glukosewert wieder auf den bewährten Zwei-Werte-Endpunkt getrennt
-- 20-Minuten-Historie wird separat geladen und darf bei einem Fehler den aktuellen Wert nicht mehr blockieren
-- Kompakter Refresh-Button
-- Standard-Zielwert in den Einstellungen speicherbar
-- Zielwert wird beim Start und Zurücksetzen automatisch übernommen
+- gewichteter 20-Minuten-Trend, stabilerer Nightscout-Abruf, kompakter Refresh und speicherbarer Standard-Zielwert
 
 ### Version 0.7
 
-- Kompakter Header mit App-Icon und Burger-Menü
-- Menübereiche für Info, Hilfe, Versionsverlauf, Kontakt und Einstellungen
-- Einheitlicher Sicherheitshinweis im Infofenster und Footer
-- Eigener gewichteter Trend über 20 Minuten
-- Jüngere Werte und die letzten fünf Minuten werden stärker gewichtet
-- Ausreißerbegrenzung, Mindestanzahl und Richtungsbestätigung
-- Warnung bei deutlicher Abweichung zum Nightscout-Einzeltrend
-- Kompaktere Beschriftungen in „Aktuelle Situation“
-- Eingabewerte werden beim Antippen vollständig markiert
-- Mahlzeit-/Notizfeld vorerst entfernt
-- Manuelle Feinanpassung als optionale Einstellung
-- Versionsverlauf absteigend sortiert
+- kompakter Header, Burger-Menü und einheitlicher Sicherheitshinweis
 
 ### Version 0.6
 
-- Erweiterte Nightscout-Profil-, IOB- und COB-Anbindung
-- Fallback über CarePortal-Behandlungen und Profilwerte
-- QR-Export und QR-Import
-- Automatische FPE-Berechnung und Mahlzeitenlevel
+- erweiterte Nightscout-Profil-, IOB- und COB-Anbindung
+- automatische FPE-Berechnung und Mahlzeitenlevel
 
 ### Version 0.5
 
-- Umschaltung mmol/l und mg/dl
-- Nightscout-Konfiguration
-- PWA-Icon und Update-Hinweis
-- JSON-Export und -Import
-- Aktivitätsoption ohne Anpassung
+- Umschaltung mmol/l und mg/dl, Nightscout-Konfiguration, PWA und JSON-Import/-Export
 
 ### Version 0.4
 
-- Splitberechnung
-- FPE-Spätanteil
-- Levelabhängige Zeitfenster
-- Aktivitätspuffer
+- Splitberechnung, FPE-Spätanteil, levelabhängige Zeitfenster und Aktivitätspuffer
 
 ### Version 0.3
 
-- Gemeinsame Netto-Rechnung
-- KH-Helfer-Datenbank
-- Alltagstaugliche Portionsvorschläge
+- gemeinsame Nettorechnung und persönliche KH-Helfer
 
 ### Version 0.2
 
-- Kohlenhydrat-Ausgleich
-- Differenzierter IOB-Abzug
-- Trend- und Aktivitätshinweise
+- Kohlenhydratausgleich, differenzierter IOB-Abzug und Trendhinweise
 
 ### Version 0.1
 
-- Erste lokale Rechenversion
-- Grundlegende Eingaben und Rechenaufschlüsselung
-- Lokale Speicherung
+- erste lokale Rechenversion
 
-## Nightscout
+## Datenschutz und Technik
 
-Die App kann – abhängig von der jeweiligen Instanz – Glukose, Trend, IOB, COB und Profilwerte laden. Manuelle Eingaben bleiben möglich. Das tatsächlich noch senkende IOB bleibt eine bewusste manuelle Einschätzung.
+Die Berechnungen erfolgen lokal im Browser. Die App übermittelt keine Gesundheits-, Nightscout- oder Berechnungsdaten an einen vom Projektherausgeber betriebenen Server. Bei eingerichteter Nightscout-Verbindung kommuniziert das Endgerät direkt mit der angegebenen Nightscout-Instanz. Normale Exporte enthalten das Nightscout-Token nicht; es wird nur nach ausdrücklicher Auswahl aufgenommen.
 
-## Datenschutz
+Technische Basis: HTML, CSS, JavaScript, Web App Manifest, Service Worker und Browser Local Storage. Es werden keine externen JavaScript-Frameworks oder Laufzeitbibliotheken verwendet.
 
-Berechnungen und Einstellungen werden im Browser verarbeitet. Zugangstoken gehören nicht in ein öffentliches Repository. Normale Exporte enthalten das Nightscout-Token nicht.
+## Urheberschaft und Lizenz
 
-## Technischer Inhalt
+Konzept, fachliche Anforderungen und inhaltliche Ausgestaltung: **Teute0815**  
+Technische Umsetzung: KI-gestützt mit ChatGPT von OpenAI.
 
-- `index.html`
-- `manifest.webmanifest`
-- `sw.js`
-- `icons/`
+Der Quellcode steht unter der MIT-Lizenz. Geänderte Versionen dürfen nicht den Eindruck erwecken, vom ursprünglichen Projektherausgeber medizinisch geprüft, freigegeben oder empfohlen worden zu sein.
